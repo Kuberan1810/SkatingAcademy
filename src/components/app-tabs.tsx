@@ -1,32 +1,281 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
+import QuickActionsModal from '@/components/quick-actions-modal';
+import { TabBarVisibilityProvider, useTabBarVisibility } from '@/context/tab-bar-visibility';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { Tabs, usePathname, useRouter, useSegments } from 'expo-router';
+import { Add, ClipboardText, DocumentText, DocumentText1, Home2, Profile2User } from 'iconsax-react-native';
+import React, { useState } from 'react';
+import { LayoutAnimation, LogBox, Platform, TouchableOpacity, UIManager, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { Colors } from '@/constants/theme';
+LogBox.ignoreLogs(['setLayoutAnimationEnabledExperimental is currently a no-op']);
 
-export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  try {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  } catch (e) {
+    // Ignore in New Architecture
+  }
+}
+
+// Must be created OUTSIDE the component so it is never recreated on each render.
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
+function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: BottomTabBarProps & { onAddPress: () => void }) {
+  const { tabBarOffset, isTabBarVisible } = useTabBarVisibility();
+  const segments = useSegments();
+  const [tabLayouts, setTabLayouts] = useState<{ [key: string]: { x: number; y: number; width: number; height: number } }>({});
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: tabBarOffset.value }],
+    };
+  });
+
+  const activeRouteKey = state.routes[state.index]?.key;
+  const activeLayout = tabLayouts[activeRouteKey];
+
+  // Shared values for the sliding indicator
+  const indicatorX = useSharedValue(0);
+  const indicatorY = useSharedValue(0);
+  const indicatorW = useSharedValue(0);
+  const indicatorH = useSharedValue(0);
+  const indicatorOpacity = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (activeLayout) {
+      indicatorX.value = withTiming(activeLayout.x, { duration: 350, easing: Easing.out(Easing.exp) });
+      indicatorY.value = withTiming(activeLayout.y, { duration: 350, easing: Easing.out(Easing.exp) });
+      indicatorW.value = withTiming(activeLayout.width, { duration: 350, easing: Easing.out(Easing.exp) });
+      indicatorH.value = withTiming(activeLayout.height, { duration: 350, easing: Easing.out(Easing.exp) });
+      indicatorOpacity.value = withTiming(1, { duration: 200 });
+    } else {
+      indicatorOpacity.value = withTiming(0, { duration: 150 });
+    }
+  }, [activeLayout]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: indicatorX.value,
+    top: indicatorY.value,
+    width: indicatorW.value,
+    height: indicatorH.value,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 30,
+    opacity: indicatorOpacity.value,
+  }));
+
+  // Hide tab bar on authentication routes
+  const isAuthRoute = (segments as string[]).includes('(auth)');
+  const isMainRoute = !isAuthRoute;
+
+  if (!isMainRoute || !isTabBarVisible) {
+    return null;
+  }
+
+  // Filter routes matching our app layout
+  const visibleRoutes = state.routes.filter((r: any) =>
+    ['index', '(tabs)/batches/index', '(tabs)/students/index'].includes(r.name)
+  );
+
+  const tabContent = visibleRoutes.map((route: any) => {
+    const { options } = descriptors[route.key];
+    const label = options.title !== undefined ? options.title : route.name;
+    const isFocused = state.index === state.routes.findIndex((r: any) => r.key === route.key);
+
+    const onPress = () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      LayoutAnimation.configureNext({
+        duration: 500,
+        create: {
+          type: LayoutAnimation.Types.spring,
+          property: LayoutAnimation.Properties.opacity,
+          springDamping: 0.85,
+        },
+        update: {
+          type: LayoutAnimation.Types.spring,
+          springDamping: 0.85,
+        },
+        delete: {
+          type: LayoutAnimation.Types.spring,
+          property: LayoutAnimation.Properties.opacity,
+          springDamping: 0.85,
+        },
+      });
+
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: route.key,
+        canPreventDefault: true,
+      });
+
+      if (!isFocused && !event.defaultPrevented) {
+        navigation.navigate(route.name);
+      }
+    };
+
+    let IconComponent: any = Home2;
+    if (route.name === '(tabs)/batches/index') IconComponent = isFocused ? DocumentText : DocumentText1;
+    if (route.name === '(tabs)/students/index') IconComponent = Profile2User;
+
+    const onLayout = (event: any) => {
+      const { x, y, width, height } = event.nativeEvent.layout;
+      setTabLayouts(prev => ({ ...prev, [route.key]: { x, y, width, height } }));
+    };
+
+    return (
+      <AnimatedTouchableOpacity
+        key={route.key}
+        onPress={onPress}
+        onLayout={onLayout}
+        activeOpacity={0.8}
+        layout={LinearTransition.duration(350).easing(Easing.out(Easing.exp))}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'transparent',
+          paddingHorizontal: isFocused ? 20 : 14,
+          paddingVertical: 12,
+          borderRadius: 30,
+          zIndex: 1,
+        }}
+      >
+        <IconComponent size={24} color={isFocused ? "#FFFFFF" : "#8A8A8E"} variant={isFocused ? "Bold" : "Linear"} />
+        {isFocused && (
+          <Animated.Text
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(200)}
+            style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: 8, fontSize: 15 }}
+            numberOfLines={1}
+          >
+            {label as string}
+          </Animated.Text>
+        )}
+      </AnimatedTouchableOpacity>
+    );
+  });
+
+  const tabStyle = {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    backgroundColor: Platform.OS === 'android' ? '#1C1C1E' : 'rgba(30, 30, 45, 0.85)',
+    borderRadius: 40,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    overflow: 'hidden' as const,
+  };
 
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
+    <Animated.View style={[{
+      position: 'absolute',
+      bottom: 24,
+      left: 20,
+      right: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    }, animatedStyle]}>
 
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+      {/* Sliding indicator tab container */}
+      <View style={{
+        flex: 1,
+        marginRight: 16,
+        borderRadius: 40,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 20,
+        elevation: Platform.OS === 'android' ? 0 : 10,
+        backgroundColor: 'transparent',
+      }}>
+        {Platform.OS === 'android' ? (
+          <View style={tabStyle}>
+            <Animated.View style={indicatorStyle} />
+            {tabContent}
+          </View>
+        ) : (
+          <BlurView
+            intensity={80}
+            tint="dark"
+            blurMethod="dimezisBlurView"
+            style={tabStyle}
+          >
+            <Animated.View style={indicatorStyle} />
+            {tabContent}
+          </BlurView>
+        )}
+      </View>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onAddPress();
+        }}
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          backgroundColor: '#F67300',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#F6730050',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.35,
+          shadowRadius: 12,
+          elevation: 10,
+        }}
+      >
+        <Add size={32} color="#FFFFFF" variant="Linear" />
+      </TouchableOpacity>
+
+    </Animated.View>
+  );
+}
+
+export default function AppTabs() {
+  const [isQuickActionsVisible, setQuickActionsVisible] = useState(false);
+
+  return (
+    <TabBarVisibilityProvider>
+      <Tabs
+        tabBar={props => <CustomInstructorTabBar {...props as any} onAddPress={() => setQuickActionsVisible(true)} />}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        {/* Visible Tabs */}
+        <Tabs.Screen name="index" options={{ title: 'Home' }} />
+        <Tabs.Screen name="(tabs)/batches/index" options={{ title: 'Batches' }} />
+        <Tabs.Screen name="(tabs)/students/index" options={{ title: 'Students' }} />
+
+        {/* Hidden Tabs / Screens */}
+        <Tabs.Screen name="explore" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/dashboard/index" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/fees/index" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/notifications/index" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/reports/index" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/settings/index" options={{ href: null }} />
+        <Tabs.Screen name="(auth)/login" options={{ href: null }} />
+      </Tabs>
+
+      <QuickActionsModal
+        visible={isQuickActionsVisible}
+        onClose={() => setQuickActionsVisible(false)}
+      />
+    </TabBarVisibilityProvider>
   );
 }
