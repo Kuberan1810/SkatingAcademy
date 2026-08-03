@@ -4,7 +4,7 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Tabs, usePathname, useRouter, useSegments } from 'expo-router';
-import { Add, ClipboardText, DocumentText, DocumentText1, Home2, Profile2User } from 'iconsax-react-native';
+import { Add, Card, ClipboardText, DocumentText, DocumentText1, Home2, Profile2User } from 'iconsax-react-native';
 import React, { useState } from 'react';
 import { LayoutAnimation, LogBox, Platform, TouchableOpacity, UIManager, View } from 'react-native';
 import Animated, {
@@ -84,7 +84,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
 
   // Filter routes matching our app layout
   const visibleRoutes = state.routes.filter((r: any) =>
-    ['index', '(tabs)/batches/index', '(tabs)/students/index'].includes(r.name)
+    ['index', '(tabs)/students/index', '(tabs)/batches/index', '(tabs)/fees/index'].includes(r.name)
   );
 
   const tabContent = visibleRoutes.map((route: any) => {
@@ -125,8 +125,9 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     };
 
     let IconComponent: any = Home2;
-    if (route.name === '(tabs)/batches/index') IconComponent = isFocused ? DocumentText : DocumentText1;
     if (route.name === '(tabs)/students/index') IconComponent = Profile2User;
+    if (route.name === '(tabs)/batches/index') IconComponent = isFocused ? DocumentText : DocumentText1;
+    if (route.name === '(tabs)/fees/index') IconComponent = Card;
 
     const onLayout = (event: any) => {
       const { x, y, width, height } = event.nativeEvent.layout;
@@ -145,18 +146,18 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: 'transparent',
-          paddingHorizontal: isFocused ? 20 : 14,
-          paddingVertical: 12,
+          paddingHorizontal: isFocused ? 16 : 10,
+          paddingVertical: 10,
           borderRadius: 30,
           zIndex: 1,
         }}
       >
-        <IconComponent size={24} color={isFocused ? "#FFFFFF" : "#8A8A8E"} variant={isFocused ? "Bold" : "Linear"} />
+        <IconComponent size={22} color={isFocused ? "#FFFFFF" : "#8A8A8E"} variant={isFocused ? "Bold" : "Linear"} />
         {isFocused && (
           <Animated.Text
             entering={FadeIn.duration(200)}
             exiting={FadeOut.duration(200)}
-            style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: 8, fontSize: 15 }}
+            style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: 6, fontSize: 14 }}
             numberOfLines={1}
           >
             {label as string}
@@ -172,8 +173,8 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     alignItems: 'center' as const,
     backgroundColor: Platform.OS === 'android' ? '#1C1C1E' : 'rgba(30, 30, 45, 0.85)',
     borderRadius: 40,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
     overflow: 'hidden' as const,
   };
 
@@ -181,8 +182,8 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     <Animated.View style={[{
       position: 'absolute',
       bottom: 24,
-      left: 20,
-      right: 20,
+      left: 16,
+      right: 16,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -191,7 +192,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
       {/* Sliding indicator tab container */}
       <View style={{
         flex: 1,
-        marginRight: 16,
+        marginRight: 12,
         borderRadius: 40,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 10 },
@@ -226,9 +227,9 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
           onAddPress();
         }}
         style={{
-          width: 60,
-          height: 60,
-          borderRadius: 30,
+          width: 56,
+          height: 56,
+          borderRadius: 28,
           backgroundColor: '#F67300',
           alignItems: 'center',
           justifyContent: 'center',
@@ -239,7 +240,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
           elevation: 10,
         }}
       >
-        <Add size={32} color="#FFFFFF" variant="Linear" />
+        <Add size={30} color="#FFFFFF" variant="Linear" />
       </TouchableOpacity>
 
     </Animated.View>
@@ -259,13 +260,13 @@ export default function AppTabs() {
       >
         {/* Visible Tabs */}
         <Tabs.Screen name="index" options={{ title: 'Home' }} />
+        <Tabs.Screen name="(tabs)/students/index" options={{ title: 'Student' }} />
         <Tabs.Screen name="(tabs)/batches/index" options={{ title: 'Batches' }} />
-        <Tabs.Screen name="(tabs)/students/index" options={{ title: 'Students' }} />
+        <Tabs.Screen name="(tabs)/fees/index" options={{ title: 'Fees' }} />
 
         {/* Hidden Tabs / Screens */}
         <Tabs.Screen name="explore" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/dashboard/index" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/fees/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/notifications/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/reports/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/settings/index" options={{ href: null }} />
@@ -279,3 +280,4 @@ export default function AppTabs() {
     </TabBarVisibilityProvider>
   );
 }
+

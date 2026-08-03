@@ -2,18 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .font-normal {
+    font-family: "Urbanist_400Regular";
+  }
 
-:root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+  .font-medium {
+    font-family: "Urbanist_500Medium";
+  }
+
+  .font-semibold {
+    font-family: "Urbanist_600SemiBold";
+  }
+
+  .font-bold {
+    font-family: "Urbanist_700Bold";
+  }
 }
 @layer base {
-  text {
-    font-family: Urbanist_400Regular;
+  * {
+    font-family: 'Urbanist_400Regular';
   }
+}
+
+
+* {
+  font-family: 'Urbanist_400Regular';
 }
