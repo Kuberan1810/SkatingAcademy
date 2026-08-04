@@ -1,10 +1,10 @@
 import React from 'react';
 import {
   ScrollView,
+  StyleProp,
   Text,
   TouchableOpacity,
   View,
-  StyleProp,
   ViewStyle,
 } from 'react-native';
 
@@ -76,31 +76,27 @@ export default function FiltersTabs({
             key={tabId}
             activeOpacity={0.7}
             onPress={() => onSelectTab(tabId)}
-            className={`px-5 py-2.5 rounded-[16px] border flex-row items-center justify-center ${
-              isActive
+            className={`px-5 py-3 rounded-[10px] border flex-row items-center justify-center ${isActive
                 ? `bg-black border-black ${activeTabClassName}`
-                : `bg-[#F8F7FA] border-[#F0ECF8] ${inactiveTabClassName}`
-            } ${tabClassName}`}
+                : `bg-[#F7F7F7] border-primary-border  ${inactiveTabClassName}`
+              } ${tabClassName}`}
           >
             <Text
-              className={`text-[16px] -tracking-[0.3px] ${
-                isActive
+              className={`text-[16px] -tracking-[0.3px] ${isActive
                   ? `font-urbanist-medium text-white ${activeTextClassName}`
-                  : `font-urbanist-regular text-[#626262] ${inactiveTextClassName}`
-              } ${textClassName}`}
+                  : `font-urbanist-medium text-[#626262] ${inactiveTextClassName}`
+                } ${textClassName}`}
             >
               {tabLabel}
             </Text>
             {count !== undefined && (
               <View
-                className={`ml-2 px-1.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-white/20' : 'bg-black/5'
-                }`}
+                className={`ml-2 px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20' : 'bg-black/5'
+                  }`}
               >
                 <Text
-                  className={`text-[12px] font-urbanist-semibold ${
-                    isActive ? 'text-white' : 'text-[#626262]'
-                  }`}
+                  className={`text-[12px] font-urbanist-semibold ${isActive ? 'text-white' : 'text-[#626262]'
+                    }`}
                 >
                   {count}
                 </Text>
