@@ -1,3 +1,4 @@
+import styles from "@/styles/styles";
 import React from "react";
 import { Text, TouchableOpacity } from "react-native";
 
@@ -18,6 +19,7 @@ const BtnCom: React.FC<BtnComProps> = ({
         <TouchableOpacity
             onPress={onClick}
             activeOpacity={0.7}
+            
             className="flex-row items-center gap-2 px-3 py-2.5 border self-start border-[#F2EEF4] rounded-[10px] bg-white "
         >
             {icon && iconPosition === "left" && icon}

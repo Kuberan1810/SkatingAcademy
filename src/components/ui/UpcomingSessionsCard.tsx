@@ -61,35 +61,14 @@ export function StatusPillButton({
     ? '#0E0E0E'
     : '#0E0E0E';
 
-  const shadowStyles = {
-    boxShadow: [
-      {
-        offsetX: 0,
-        offsetY: 4,
-        blurRadius: 4,
-        spreadDistance: 0,
-        color: 'rgba(255, 255, 255, 0.25)',
-        inset: true,
-      },
-      {
-        offsetX: 0,
-        offsetY: -2,
-        blurRadius: 3,
-        spreadDistance: 0,
-        color: 'rgba(0, 0, 0, 0.15)',
-        inset: true,
-      },
-    ] as any,
-  };
-
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
-      style={[{ backgroundColor: bgColor }, shadowStyles]}
-      className="h-[34px] px-[18px] rounded-[14px] flex-row items-center justify-center self-center"
+      style={[{ backgroundColor: bgColor }, styles.InnerShadowStyle]}
+      className="px-[18px] py-[10px] rounded-[14px] flex-row items-center justify-center self-center"
     >
-      <Text className="text-[14px] font-urbanist-semibold text-white tracking-tight">
+      <Text className="text-[13px] font-urbanist-semibold text-white tracking-tight">
         {displayLabel}
       </Text>
     </TouchableOpacity>
@@ -126,7 +105,7 @@ export default function UpcomingSessionsCard({
       {/* Left Details */}
       <View className="flex-1 mr-3 justify-center">
         {/* Title */}
-        <Text className="text-[20px] font-urbanist-semibold text-primary tracking-tight mb-4">
+        <Text className="text-[20px] font-urbanist-semibold text-primary tracking-tight mb-2">
           {title}
         </Text>
 

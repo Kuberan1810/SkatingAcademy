@@ -12,7 +12,7 @@ interface ScreenWrapperProps {
 export default function ScreenWrapper({ children, style, className }: ScreenWrapperProps) {
   return (
     <LinearGradient
-      colors={['#E9E5FE', '#FFFFFF']}
+      colors={['#EDFBFF', '#FFFFFF']}
       start={{ x: 0.6, y: 0 }}
       end={{ x: 0, y: 0.5 }}
       style={{ flex: 1 }}

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { CalendarRemove } from 'iconsax-react-native';
 import FiltersTabs from '@/components/ui/FiltersTabs';
 import BtnCom from '@/components/ui/BtnCom';
 import UpcomingSessionsCard, { UpcomingSessionsCardProps } from '@/components/ui/UpcomingSessionsCard';
+import styles from '@/styles/styles';
 
 export interface UpcomingSessionItem extends UpcomingSessionsCardProps {
   id: string;
@@ -12,6 +14,7 @@ export interface UpcomingSessionItem extends UpcomingSessionsCardProps {
 export interface UpcomingSessionsProps {
   date?: string;
   sessions?: UpcomingSessionItem[];
+  emptyText?: string;
   onViewAllPress?: () => void;
   onSessionPress?: (session: UpcomingSessionItem) => void;
   onStatusPress?: (session: UpcomingSessionItem) => void;
@@ -41,6 +44,7 @@ const DEFAULT_SESSIONS: UpcomingSessionItem[] = [
 export default function UpcomingSessions({
   date = 'Friday, 15 Jan, 2024',
   sessions = DEFAULT_SESSIONS,
+  emptyText = 'No classes',
   onViewAllPress,
   onSessionPress,
   onStatusPress,
@@ -55,9 +59,9 @@ export default function UpcomingSessions({
   });
 
   return (
-    <View style={style} className={`mt-6 ${className}`}>
+    <View style={style} className={`mt-[30px] ${className}`}>
       {/* Header Row: Title & Date + View All Button */}
-      <View className="flex-row items-center justify-between mb-4">
+      <View className="flex-row items-center justify-between mb-5">
         <View className="flex-1 mr-3">
           <Text className="text-[24px] font-urbanist-bold text-primary tracking-tight">
             Upcoming Sessions
@@ -81,20 +85,35 @@ export default function UpcomingSessions({
 
       {/* Reusable Upcoming Sessions Cards */}
       <View className="gap-3.5">
-        {filteredSessions.map((session) => (
-          <UpcomingSessionsCard
-            key={session.id}
-            title={session.title}
-            time={session.time}
-            studentsCount={session.studentsCount}
-            status={session.status}
-            statusLabel={session.statusLabel}
-            onPressCard={() => onSessionPress?.(session)}
-            onStatusPress={() => onStatusPress?.(session)}
-          />
-        ))}
+        {filteredSessions.length > 0 ? (
+          filteredSessions.map((session) => (
+            <UpcomingSessionsCard
+              key={session.id}
+              title={session.title}
+              time={session.time}
+              studentsCount={session.studentsCount}
+              status={session.status}
+              statusLabel={session.statusLabel}
+              onPressCard={() => onSessionPress?.(session)}
+              onStatusPress={() => onStatusPress?.(session)}
+            />
+          ))
+        ) : (
+          <View style={styles.BoxStyle} className="py-8 items-center justify-center">
+            <View style={styles.IconStyle} className="mb-2 p-2.5">
+              <CalendarRemove size={24} color="#8A8A8E" variant="Linear" />
+            </View>
+            <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
+              {emptyText}
+            </Text>
+            <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
+              There are no sessions scheduled for this time.
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
 }
+
 

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleProp, ViewStyle, ImageSourcePropType
 import { Image } from 'expo-image';
 import { ArrowLeft2, NotificationBing } from 'iconsax-react-native';
 import { router } from 'expo-router';
+import styles from '@/styles/styles';
 
 export type IconPropType =
     | React.ReactNode
@@ -70,29 +71,7 @@ export function FigmaIconButton({
         <TouchableOpacity
             activeOpacity={0.7}
             onPress={onPress}
-            style={[
-                {
-                    boxShadow: [
-                        {
-                            offsetX: 4,
-                            offsetY: 4,
-                            blurRadius: 4,
-                            spreadDistance: 0,
-                            color: 'rgba(0, 0, 0, 0.05)',
-                            inset: true,
-                        },
-                        {
-                            offsetX: -4,
-                            offsetY: -4,
-                            blurRadius: 4,
-                            spreadDistance: 0,
-                            color: 'rgba(0, 0, 0, 0.05)',
-                            inset: true,
-                        },
-                    ] as any,
-                },
-                style,
-            ]}
+            style={[styles.BlackInnerShadowStyle ]}
             className={`p-[13px] rounded-[18px] bg-white border border-primary-border justify-center items-center shadow-[inset_4px_4px_4px_rgba(0,0,0,0.05),_inset_-4px_-4px_4px_rgba(0,0,0,0.05)] ${className}`}
         >
             <View className="items-center justify-center">

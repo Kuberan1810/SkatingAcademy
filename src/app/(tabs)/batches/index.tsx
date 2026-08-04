@@ -1,11 +1,16 @@
-import { Text, View } from 'react-native';
-import React from 'react';
+import React, { useState } from 'react';
+import Animated from 'react-native-reanimated';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
+import Search from '@/components/ui/Search';
+import Overview from '@/features/dashboard/Overview';
+import BatchList from '@/features/batches/BatchList';
 import { router } from 'expo-router';
 import { Setting2 } from 'iconsax-react-native';
 
 export default function BatchesScreen() {
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
     <ScreenWrapper>
       <Header
@@ -17,11 +22,32 @@ export default function BatchesScreen() {
           console.log('Settings pressed');
         }}
       />
-      <View className="flex-1 justify-center items-center px-4">
-        <Text className="text-lg font-urbanist-bold text-gray-800">
-          Batches Screen
-        </Text>
-      </View>
+      <Search
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search students, batches..."
+        showFilter={true}
+      />
+
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={1}
+        decelerationRate={0.998}
+        bounces={true}
+        alwaysBounceVertical={true}
+        directionalLockEnabled={true}
+        overScrollMode="never"
+        keyboardShouldPersistTaps="handled"
+        scrollsToTop={true}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 200 }}
+      >
+        <Overview />
+        <BatchList
+          onStartPress={(item) => console.log('Start batch:', item.title)}
+          onAttendancePress={(item) => console.log('View attendance:', item.title)}
+          onMorePress={(item) => console.log('More options for:', item.title)}
+        />
+      </Animated.ScrollView>
     </ScreenWrapper>
   );
 }

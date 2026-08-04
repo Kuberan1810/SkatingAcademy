@@ -26,6 +26,9 @@ module.exports = {
           DEFAULT: '#02763D',
           light: 'rgba(2, 118, 61, 0.10)',
         },
+        'green-primary': '#02763D',
+        'green-light': '#E6F4EA',
+        'green-border': '#D4EBDB',
       },
       fontFamily: {
         sans: ["Urbanist_400Regular"],

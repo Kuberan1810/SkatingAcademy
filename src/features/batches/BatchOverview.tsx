@@ -5,6 +5,7 @@ import { Text, View } from "react-native"
 export default function Overview() {
     return (
         <View>
+            
             {/* Overview Header */}
             <Text className="text-[24px] font-urbanist-bold text-primary mb-5">
                 Overview
@@ -14,18 +15,18 @@ export default function Overview() {
             <View className="flex-row gap-3.5 mb-3.5">
                 <View className="flex-1">
                     <StatsCard
-                        title="Total Batches"
+                        title="Total Students"
                         value="26"
-                        subtitle="2 New This Month"
+                        subtitle="18 new this month"
                         variant="purple"
                     />
                 </View>
                 <View className="flex-1">
                     <StatsCard
-                        title="Today's Sessions"
-                        value="03"
-                        valueSuffix="/ 26"
-                        subtitle="1 Completed"
+                        title="Present Today"
+                        value="26"
+                        valueSuffix="/ 126"
+                        subtitle="76 % Attendance"
                         variant="peach"
                     />
                 </View>
@@ -34,17 +35,17 @@ export default function Overview() {
             <View className="flex-row gap-3.5">
                 <View className="flex-1">
                     <StatsCard
-                        title="Students"
-                        value="126"
-                        subtitle="Across All Batches"
+                        title="Pending Fess"
+                        value="₹18,500"
+                        subtitle="12 students due"
                         variant="blue"
                     />
                 </View>
                 <View className="flex-1">
                     <StatsCard
-                        title="Today's Attendance"
-                        value="98 / 126"
-                        subtitle="78% Present"
+                        title="Total Revenue"
+                        value="₹82,400"
+                        subtitle="+18% from last month"
                         variant="green"
                     />
                 </View>

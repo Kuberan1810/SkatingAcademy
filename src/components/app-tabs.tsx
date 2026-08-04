@@ -75,7 +75,13 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
   }));
 
   // Hide tab bar on authentication routes
-  const isAuthRoute = (segments as string[]).includes('(auth)');
+  const pathname = usePathname();
+  const isAuthRoute =
+    (segments as string[]).includes('(auth)') ||
+    (segments as string[]).includes('login') ||
+    (pathname && pathname.toLowerCase().includes('login')) ||
+    pathname === '/' ||
+    pathname === '';
   const isMainRoute = !isAuthRoute;
 
   if (!isMainRoute || !isTabBarVisible) {
@@ -84,7 +90,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
 
   // Filter routes matching our app layout
   const visibleRoutes = state.routes.filter((r: any) =>
-    ['index', '(tabs)/students/index', '(tabs)/batches/index', '(tabs)/fees/index'].includes(r.name)
+    ['(tabs)/dashboard/index', '(tabs)/students/index', '(tabs)/batches/index', '(tabs)/fees/index'].includes(r.name)
   );
 
   const tabContent = visibleRoutes.map((route: any) => {
@@ -253,20 +259,20 @@ export default function AppTabs() {
   return (
     <TabBarVisibilityProvider>
       <Tabs
+        initialRouteName="(auth)/login"
         tabBar={props => <CustomInstructorTabBar {...props as any} onAddPress={() => setQuickActionsVisible(true)} />}
         screenOptions={{
           headerShown: false,
         }}
       >
         {/* Visible Tabs */}
-        <Tabs.Screen name="index" options={{ title: 'Home' }} />
-        <Tabs.Screen name="(tabs)/students/index" options={{ title: 'Student' }} />
+        <Tabs.Screen name="(tabs)/dashboard/index" options={{ title: 'Home' }} />
         <Tabs.Screen name="(tabs)/batches/index" options={{ title: 'Batches' }} />
+        <Tabs.Screen name="(tabs)/students/index" options={{ title: 'Student' }} />
         <Tabs.Screen name="(tabs)/fees/index" options={{ title: 'Fees' }} />
 
         {/* Hidden Tabs / Screens */}
-        <Tabs.Screen name="explore" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/dashboard/index" options={{ href: null }} />
+        <Tabs.Screen name="index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/notifications/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/reports/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/settings/index" options={{ href: null }} />

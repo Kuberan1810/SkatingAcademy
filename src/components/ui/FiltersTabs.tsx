@@ -1,12 +1,13 @@
+import styles from '@/styles/styles';
 import React from 'react';
 import {
-  ScrollView,
   StyleProp,
   Text,
   TouchableOpacity,
   View,
   ViewStyle,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 export interface FilterItem {
   id: string;
@@ -25,6 +26,8 @@ export interface FiltersTabsProps {
   onSelectTab: (tabId: string) => void;
   /** Whether the tabs render in a horizontal scrollable view (default: true) */
   scrollable?: boolean;
+  /** Custom style for ScrollView content container */
+  contentContainerStyle?: StyleProp<ViewStyle>;
   /** Custom container style */
   containerStyle?: StyleProp<ViewStyle>;
   /** Custom Tailwind class for container */
@@ -54,6 +57,7 @@ export default function FiltersTabs({
   activeTab,
   onSelectTab,
   scrollable = true,
+  contentContainerStyle,
   containerStyle,
   containerClassName = '',
   tabClassName = '',
@@ -76,9 +80,10 @@ export default function FiltersTabs({
             key={tabId}
             activeOpacity={0.7}
             onPress={() => onSelectTab(tabId)}
+            style={isActive ? [styles.InnerShadowStyle] : [styles.BlackInnerShadowStyle]}
             className={`px-5 py-3 rounded-[10px] border flex-row items-center justify-center ${isActive
-                ? `bg-black border-black ${activeTabClassName}`
-                : `bg-[#F7F7F7] border-primary-border  ${inactiveTabClassName}`
+              ? `bg-black border-black ${activeTabClassName}`
+              : `bg-[#F7F7F7] border-primary-border  ${inactiveTabClassName}`
               } ${tabClassName}`}
           >
             <Text
@@ -113,13 +118,21 @@ export default function FiltersTabs({
   }
 
   return (
-    <ScrollView
+    <Animated.ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 20 }}
-      className="flex-grow-0"
+      scrollEventThrottle={1}
+      decelerationRate={0.998}
+      bounces={true}
+      alwaysBounceHorizontal={true}
+      directionalLockEnabled={true}
+      overScrollMode="never"
+      nestedScrollEnabled={true}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={[{ paddingHorizontal: 20 }, contentContainerStyle]}
+      className="-mx-5 flex-grow-0"
     >
       {renderTabs()}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
