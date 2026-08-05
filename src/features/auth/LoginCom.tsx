@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft2, Sms, Lock, Eye, EyeSlash } from 'iconsax-react-native'
 import { useRouter } from 'expo-router';
 import PrimaryBtn from '@/components/ui/PrimaryBtn';
+import GoBack from '@/components/ui/GoBack';
 
 export default function LoginCom() {
 
@@ -23,8 +24,8 @@ export default function LoginCom() {
                 <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24 }}>
                     <View className='mb-10 '>
                         {/* BACK */}
-                        <View className='mb-20'>
-                           
+                        <View className='mb-6'>
+                            <GoBack />
                         </View>
 
                         {/* TITLE */}

@@ -197,8 +197,10 @@ export default function BatchOptionsBottomSheet({
     <Modal
       visible={showModal}
       transparent
+      statusBarTranslucent
       animationType="none"
       onRequestClose={onClose}
+   
     >
       <View style={sheetStyles.overlay}>
         {/* Soft Backdrop */}
@@ -207,6 +209,7 @@ export default function BatchOptionsBottomSheet({
             style={sheetStyles.backdropTouch}
             activeOpacity={1}
             onPress={onClose}
+               className='duration-700'
           />
         </Animated.View>
 
@@ -275,7 +278,7 @@ const sheetStyles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
   backdropTouch: {
     flex: 1,

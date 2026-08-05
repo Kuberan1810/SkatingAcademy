@@ -43,8 +43,9 @@ export default function BatchesScreen() {
       >
         <Overview />
         <BatchList
-          onStartPress={(item) => console.log('Start batch:', item.title)}
-          onAttendancePress={(item) => console.log('View attendance:', item.title)}
+          onBatchPress={(item) => router.push('/(tabs)/batches/StudentListScreen')}
+          onStartPress={(item) => router.push('/(tabs)/batches/start-class')}
+          onAttendancePress={(item) => router.push('/(tabs)/batches/start-class')}
           onMorePress={(item) => console.log('More options for:', item.title)}
         />
       </Animated.ScrollView>

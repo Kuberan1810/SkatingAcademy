@@ -8,6 +8,7 @@ export const COLORS = {
   greenLight: 'rgba(2, 118, 61, 0.10)',
   greenBorder: '#BBDBCC',
   danger: '#E70C0C',
+  primaryBorder:'#F2EEF4'
 };
 
 export const styles = StyleSheet.create({

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleProp, ViewStyle } from 'react-native';
 import { Layer } from 'iconsax-react-native';
+import { router } from 'expo-router';
 import FiltersTabs from '@/components/ui/FiltersTabs';
 import BatchCard, { BatchCardProps } from '@/components/ui/BatchCard';
 import BatchOptionsBottomSheet from '@/components/ui/BatchOptionsBottomSheet';
@@ -131,7 +132,11 @@ export default function BatchList({
                             attendance={item.attendance}
                             status={item.status}
                             actionLabel={item.actionLabel}
-                            onPressCard={() => onBatchPress?.(item)}
+                            onPressCard={() =>
+                                onBatchPress
+                                    ? onBatchPress(item)
+                                    : router.push('/(tabs)/batches/StudentListScreen')
+                            }
                             onActionPress={() =>
                                 item.status === 'completed' || item.attendance
                                     ? onAttendancePress?.(item)

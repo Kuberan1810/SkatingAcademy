@@ -6,6 +6,13 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, Urbanist_400Regular, Urbanist_500Medium, Urbanist_600SemiBold, Urbanist_700Bold } from '@expo-google-fonts/urbanist';
 import AppTabs from '@/components/app-tabs';
 import React from 'react';
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+
+// Disable Reanimated strict mode warning for shared values during render
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
 // Set global default font family for React Native Text and TextInput components
 if ((Text as any).defaultProps) {

@@ -63,26 +63,32 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     }
   }, [activeLayout]);
 
-  const indicatorStyle = useAnimatedStyle(() => ({
-    position: 'absolute',
-    left: indicatorX.value,
-    top: indicatorY.value,
-    width: indicatorW.value,
-    height: indicatorH.value,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderRadius: 30,
-    opacity: indicatorOpacity.value,
-  }));
+  const indicatorStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      position: 'absolute',
+      left: indicatorX.value,
+      top: indicatorY.value,
+      width: indicatorW.value,
+      height: indicatorH.value,
+      backgroundColor: 'rgba(255, 255, 255, 0.18)',
+      borderRadius: 30,
+      opacity: indicatorOpacity.value,
+    };
+  });
 
-  // Hide tab bar on authentication routes
+  // Hide tab bar on authentication routes or full-screen routes (like start-class)
   const pathname = usePathname();
-  const isAuthRoute =
+  const isAuthOrFullScreenRoute =
     (segments as string[]).includes('(auth)') ||
     (segments as string[]).includes('login') ||
     (pathname && pathname.toLowerCase().includes('login')) ||
+    (pathname && pathname.toLowerCase().includes('start-class')) ||
+    (pathname && pathname.toLowerCase().includes('startclass')) ||
+    (pathname && pathname.toLowerCase().includes('studentlistscreen')) ||
     pathname === '/' ||
     pathname === '';
-  const isMainRoute = !isAuthRoute;
+  const isMainRoute = !isAuthOrFullScreenRoute;
 
   if (!isMainRoute || !isTabBarVisible) {
     return null;
@@ -276,6 +282,8 @@ export default function AppTabs() {
         <Tabs.Screen name="(tabs)/notifications/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/reports/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/settings/index" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/batches/start-class" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/batches/StudentListScreen" options={{ href: null }} />
         <Tabs.Screen name="(auth)/login" options={{ href: null }} />
       </Tabs>
 

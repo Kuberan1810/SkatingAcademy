@@ -6,10 +6,11 @@ import {
   ViewStyle,
   TextStyle,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import styles, { COLORS } from '@/styles/styles';
 
-export type PrimaryBtnVariant = 'black' | 'green' | 'default' | 'outline';
+export type PrimaryBtnVariant = 'black' | 'green' | 'default' | 'outline' | 'white';
 
 export interface PrimaryBtnProps {
   /** Button text label */
@@ -24,6 +25,8 @@ export interface PrimaryBtnProps {
   textColor?: string;
   /** Disabled state */
   disabled?: boolean;
+  /** Loading state */
+  loading?: boolean;
   /** Optional icon component */
   icon?: React.ComponentType<{ size?: number; color?: string }>;
   /** Icon position */
@@ -43,6 +46,7 @@ export default function PrimaryBtn({
   bgColor,
   textColor = '#FFFFFF',
   disabled = false,
+  loading = false,
   icon: Icon,
   iconPosition = 'left',
   style,
@@ -55,7 +59,8 @@ export default function PrimaryBtn({
       case 'green':
         return COLORS.greenPrimary;
       case 'outline':
-        return 'transparent';
+      case 'white':
+        return '#FFFFFF';
       case 'black':
       default:
         return '#0E0E0E';
@@ -64,35 +69,45 @@ export default function PrimaryBtn({
 
   const background = getBackgroundColor();
   const isOutline = variant === 'outline';
+  const isWhite = isOutline || variant === 'white' || background === '#FFFFFF' || background === 'white';
+
+  const shadowStyle = isWhite ? styles.BlackInnerShadowStyle : styles.InnerShadowStyle;
+  const finalTextColor = isOutline || variant === 'white' ? COLORS.primary : textColor;
 
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
-      disabled={disabled}
+      disabled={disabled || loading}
       style={[
-        !isOutline ? styles.InnerShadowStyle : undefined,
+        shadowStyle,
         {
           backgroundColor: background,
-          borderColor: isOutline ? COLORS.primary : undefined,
+          borderColor: isOutline ? COLORS.primaryBorder || '#F2EEF4' : undefined,
           borderWidth: isOutline ? 1 : 0,
           opacity: disabled ? 0.6 : 1,
         },
         style,
       ]}
-      className={`p-3.5 rounded-[14px] flex-row items-center justify-center px-4 gap-2 ${className}`}
+      className={`p-3.5 rounded-[16px] flex-row items-center justify-center px-4 gap-2 ${className}`}
     >
-      {Icon && iconPosition === 'left' && (
-        <Icon size={20} color={isOutline ? COLORS.primary : textColor} />
-      )}
-      <Text
-        style={[{ color: isOutline ? COLORS.primary : textColor }, textStyle]}
-        className="text-[16px] font-urbanist-semibold tracking-tight"
-      >
-        {label}
-      </Text>
-      {Icon && iconPosition === 'right' && (
-        <Icon size={20} color={isOutline ? COLORS.primary : textColor} />
+      {loading ? (
+        <ActivityIndicator color={finalTextColor} size="small" />
+      ) : (
+        <>
+          {Icon && iconPosition === 'left' && (
+            <Icon size={20} color={finalTextColor} />
+          )}
+          <Text
+            style={[{ color: finalTextColor }, textStyle]}
+            className="text-[16px] font-urbanist-semibold tracking-tight"
+          >
+            {label}
+          </Text>
+          {Icon && iconPosition === 'right' && (
+            <Icon size={20} color={finalTextColor} />
+          )}
+        </>
       )}
     </TouchableOpacity>
   );
