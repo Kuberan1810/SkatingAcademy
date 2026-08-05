@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { Check, X } from 'lucide-react-native';
 import styles from '@/styles/styles';
 
-const DEFAULT_STUDENT_AVATAR = require('@/../assets/images/user-avatar.png');
+const DEFAULT_STUDENT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
 
 export type AttendanceStatus = 'present' | 'absent' | 'none';
 
@@ -58,10 +58,10 @@ export default function StudentAttendanceCard({
     >
       {/* Left: Avatar & Info */}
       <View className="flex-row items-center flex-1">
-        <View className="w-[50px] h-[50px] rounded-full overflow-hidden justify-center items-center bg-[#DDEEFF]">
+        <View className=" rounded-full overflow-hidden justify-center items-center ">
           <Image
             source={resolvedAvatar}
-            style={{ width: 50, height: 50, borderRadius: 25 }}
+            style={{ width: 44, height: 44, borderRadius: 25 }}
             contentFit="cover"
             transition={200}
           />

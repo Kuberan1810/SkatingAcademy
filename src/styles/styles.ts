@@ -29,6 +29,14 @@ export const styles = StyleSheet.create({
     borderColor: '#F2EEF4',
     backgroundColor: '#FDFDFD',
   },
+   BoxStyle2: {
+    paddingBlock: 20,
+    paddingInline: 20,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#F2EEF4',
+    backgroundColor: '#FDFDFD',
+  },
   InnerShadowStyle: {
     boxShadow: [
       {
@@ -77,6 +85,26 @@ export const styles = StyleSheet.create({
         blurRadius: 4,
         spreadDistance: 0,
         color: 'rgba(2, 118, 61, 0.10)',
+        inset: true,
+      },
+    ] as any,
+  },
+  RedShadowStyle: {
+    boxShadow: [
+      {
+        offsetX: 4,
+        offsetY: 4,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(231, 12, 12, 0.10)',
+        inset: true,
+      },
+      {
+        offsetX: -4,
+        offsetY: -4,
+        blurRadius: 4,
+        spreadDistance: 0,
+        color: 'rgba(231, 12, 12, 0.10)',
         inset: true,
       },
     ] as any,

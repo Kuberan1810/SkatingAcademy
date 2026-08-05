@@ -19,12 +19,16 @@ import {
 import { AttendanceStatus, StudentData } from './StudentAttendanceCard';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
+  try {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  } catch (e) {
+    // Ignore in New Architecture
+  }
 }
 
 const { height } = Dimensions.get('window');
 
-const DEFAULT_AVATAR = require('@/../assets/images/user-avatar.png');
+const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
 
 export interface AttendanceSummarySheetProps {
   visible: boolean;
@@ -314,10 +318,10 @@ export default function AttendanceSummarySheet({
                     key={s.id || idx}
                     className="flex-row items-center gap-2.5 flex-1"
                   >
-                    <View className="w-[48px] h-[48px] rounded-full overflow-hidden bg-[#DDEEFF] justify-center items-center">
+                    <View className=" rounded-full overflow-hidden  justify-center items-center">
                       <Image
                         source={DEFAULT_AVATAR}
-                        style={{ width: 48, height: 48, borderRadius: 24 }}
+                        style={{ width: 40, height: 40, borderRadius: 24 }}
                         contentFit="cover"
                       />
                     </View>
@@ -362,10 +366,10 @@ export default function AttendanceSummarySheet({
                       key={s.id || idx}
                       className="flex-row items-center gap-2.5 w-[48%]"
                     >
-                      <View className="w-[48px] h-[48px] rounded-full overflow-hidden bg-[#DDEEFF] justify-center items-center">
+                      <View className="rounded-full overflow-hidden  justify-center items-center">
                         <Image
                           source={DEFAULT_AVATAR}
-                          style={{ width: 48, height: 48, borderRadius: 24 }}
+                          style={{ width: 40, height: 40, borderRadius: 24 }}
                           contentFit="cover"
                         />
                       </View>

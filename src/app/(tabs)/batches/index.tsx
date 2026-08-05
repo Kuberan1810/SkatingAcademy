@@ -8,7 +8,10 @@ import BatchList from '@/features/batches/BatchList';
 import { router } from 'expo-router';
 import { Setting2 } from 'iconsax-react-native';
 
+import { useTabBarVisibility } from '@/context/tab-bar-visibility';
+
 export default function BatchesScreen() {
+  const { handleScroll } = useTabBarVisibility();
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
@@ -30,8 +33,9 @@ export default function BatchesScreen() {
       />
 
       <Animated.ScrollView
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        scrollEventThrottle={1}
         decelerationRate={0.998}
         bounces={true}
         alwaysBounceVertical={true}

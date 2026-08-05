@@ -17,7 +17,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-LogBox.ignoreLogs(['setLayoutAnimationEnabledExperimental is currently a no-op']);
+LogBox.ignoreLogs([
+  'setLayoutAnimationEnabledExperimental',
+  'setLayoutAnimationEnabledExperimental is currently a no-op',
+]);
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   try {
@@ -86,6 +89,8 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     (pathname && pathname.toLowerCase().includes('start-class')) ||
     (pathname && pathname.toLowerCase().includes('startclass')) ||
     (pathname && pathname.toLowerCase().includes('studentlistscreen')) ||
+    (pathname && pathname.toLowerCase().includes('recent-payments')) ||
+    (pathname && pathname.toLowerCase().includes('recentpaymentsscreen')) ||
     pathname === '/' ||
     pathname === '';
   const isMainRoute = !isAuthOrFullScreenRoute;
@@ -96,7 +101,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
 
   // Filter routes matching our app layout
   const visibleRoutes = state.routes.filter((r: any) =>
-    ['(tabs)/dashboard/index', '(tabs)/students/index', '(tabs)/batches/index', '(tabs)/fees/index'].includes(r.name)
+    ['(tabs)/dashboard/index', '(tabs)/students/index', '(tabs)/batches', '(tabs)/fees', '(tabs)/batches/index', '(tabs)/fees/index'].includes(r.name)
   );
 
   const tabContent = visibleRoutes.map((route: any) => {
@@ -137,9 +142,9 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     };
 
     let IconComponent: any = Home2;
-    if (route.name === '(tabs)/students/index') IconComponent = Profile2User;
-    if (route.name === '(tabs)/batches/index') IconComponent = isFocused ? DocumentText : DocumentText1;
-    if (route.name === '(tabs)/fees/index') IconComponent = Card;
+    if (route.name.includes('student')) IconComponent = Profile2User;
+    if (route.name.includes('batch')) IconComponent = isFocused ? DocumentText : DocumentText1;
+    if (route.name.includes('fee')) IconComponent = Card;
 
     const onLayout = (event: any) => {
       const { x, y, width, height } = event.nativeEvent.layout;
@@ -269,21 +274,20 @@ export default function AppTabs() {
         tabBar={props => <CustomInstructorTabBar {...props as any} onAddPress={() => setQuickActionsVisible(true)} />}
         screenOptions={{
           headerShown: false,
+          animation:'shift',
         }}
       >
         {/* Visible Tabs */}
         <Tabs.Screen name="(tabs)/dashboard/index" options={{ title: 'Home' }} />
-        <Tabs.Screen name="(tabs)/batches/index" options={{ title: 'Batches' }} />
+        <Tabs.Screen name="(tabs)/batches" options={{ title: 'Batches' }} />
         <Tabs.Screen name="(tabs)/students/index" options={{ title: 'Student' }} />
-        <Tabs.Screen name="(tabs)/fees/index" options={{ title: 'Fees' }} />
+        <Tabs.Screen name="(tabs)/fees" options={{ title: 'Fees' }} />
 
         {/* Hidden Tabs / Screens */}
         <Tabs.Screen name="index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/notifications/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/reports/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/settings/index" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/batches/start-class" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/batches/StudentListScreen" options={{ href: null }} />
         <Tabs.Screen name="(auth)/login" options={{ href: null }} />
       </Tabs>
 

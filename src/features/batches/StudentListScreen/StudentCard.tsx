@@ -8,6 +8,9 @@ import {
   User,
   CallCalling,
   Profile2User,
+  ProfileTick,
+  CalendarTick,
+  CalendarRemove,
 } from 'iconsax-react-native';
 import { EllipsisVertical } from 'lucide-react-native';
 import React, { useMemo } from 'react';
@@ -21,7 +24,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-const DEFAULT_AVATAR = require('@/../assets/images/user-avatar.png');
+const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
 
 export interface StudentListItem {
   id: string;
@@ -86,14 +89,14 @@ export default function StudentCard({
       activeOpacity={0.85}
       onPress={() => onPress?.(student)}
       style={[style]}
-      className={`p-6 border border-primary-border rounded-[28px] bg-white relative ${className}`}
+      className={`p-4 border border-primary-border rounded-[28px] bg-white relative ${className}`}
     >
       {/* Top Header Row: Joined Date Pill & 3-Dots Action Menu */}
       <View className="flex-row items-center justify-between mb-4">
         {/* Date Pill */}
         <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FAFAFA] border border-primary-border gap-2.5">
-          <Calendar size={20} color={COLORS.secondary} variant="Linear" />
-          <Text className="text-[16px] font-urbanist-medium text-secondary tracking-tight">
+          <Calendar size={18} color={COLORS.secondary} variant="Linear" />
+          <Text className="text-[14px] font-urbanist-medium text-secondary tracking-tight">
             Joined · {student.joinedDate}
           </Text>
         </View>
@@ -110,34 +113,34 @@ export default function StudentCard({
 
       {/* Middle Row: Avatar, Student Info & Phone Call Button */}
       <View className="flex-row items-center justify-between mb-5">
-        <View className="flex-row items-center flex-1 mr-3">
+        <View className="flex-row items-center flex-1">
           <Image
             source={resolvedAvatar}
-            style={{ width: 48, height: 48, borderRadius: 26 }}
+            style={{ width: 40, height: 40, borderRadius: 26 }}
             contentFit="cover"
             transition={200}
           />
-          <View className="ml-3 flex-1">
+          <View className="ml-2.5 flex-1">
             <Text
               numberOfLines={1}
-              className="text-[20px] font-urbanist-semibold text-primary tracking-tight"
+              className="text-[16px] font-urbanist-semibold text-primary tracking-tight"
             >
               {student.name}
             </Text>
-            <View className="flex-row items-center flex-wrap gap-x-3 gap-y-1 mt-1">
-              <View className="flex-row items-center gap-1.5">
+            <View className="flex-row items-center flex-nowrap gap-x-2  mt-1">
+              <View className="flex-row items-center gap-1">
                 <View style={styles.IconStyle}>
-                  <Location size={12} color="#626262" variant="Linear" />
+                  <Location size={11} color="#626262" variant="Linear" />
                 </View>
-                <Text className="text-[14px] font-urbanist-medium text-secondary">
+                <Text className="text-[12px] font-urbanist-medium text-secondary">
                   {student.location || 'Sathya Stadium'}
                 </Text>
               </View>
               <View className="flex-row items-center gap-1.5">
                 <View style={styles.IconStyle}>
-                  <Stickynote size={12} color="#626262" variant="Linear" />
+                  <Stickynote size={11} color="#626262" variant="Linear" />
                 </View>
-                <Text className="text-[14px] font-urbanist-medium text-secondary">
+                <Text className="text-[12px] font-urbanist-medium text-secondary">
                   {student.attendancePercent || '92%'} Attendance
                 </Text>
               </View>
@@ -150,50 +153,31 @@ export default function StudentCard({
           activeOpacity={0.8}
           onPress={handleCall}
           style={styles.InnerShadowStyle}
-          className="rounded-[18px] bg-[#4086F7] p-4 items-center justify-center"
+          className="rounded-[15px] bg-[#4086F7] p-3.5 items-center justify-center"
         >
-          <CallCalling size={20} color="#FFFFFF" />
+          <CallCalling size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
       {/* Bottom Row: Status Badges / Pills matching BatchCard style */}
-      <View className="flex-row items-center flex-wrap gap-2.5">
-        {/* Paid / Overdue Status Pill */}
-        {isPaid ? (
+      <View className="flex-row items-center flex-nowrap gap-2.5">
+        {/* Overdue Status Pill (Only rendered when payment is overdue) */}
+        {!isPaid && (
           <View className="flex-row items-center pl-[3px] pr-3 py-[3px] rounded-full bg-white border border-primary-border gap-2">
             <View
               style={{
-                backgroundColor: COLORS.greenLight,
-                borderColor: COLORS.greenBorder,
-                borderRadius: 9999,
-                ...styles.GreenShadowStyle,
-              }}
-              className="w-[32px] h-[32px] rounded-full items-center justify-center border"
-            >
-              <User size={16} color={COLORS.greenPrimary} variant="Linear" />
-            </View>
-            <Text
-              style={{ color: COLORS.greenPrimary }}
-              className="text-[14px] font-urbanist-semibold tracking-tight"
-            >
-              Paid: {student.amount || '₹1,200'}
-            </Text>
-          </View>
-        ) : (
-          <View className="flex-row items-center pl-[3px] pr-3 py-[3px] rounded-full bg-white border border-primary-border gap-2">
-            <View
-              style={{
-                backgroundColor: 'rgba(231, 12, 12, 0.10)',
+                backgroundColor: '#F8E2E2',
                 borderColor: '#F8B4B4',
                 borderRadius: 9999,
+                ...styles.RedShadowStyle,
               }}
-              className="w-[32px] h-[32px] rounded-full items-center justify-center border"
+              className="p-1.5 rounded-full items-center justify-center border"
             >
-              <Calendar size={16} color="#E70C0C" variant="Linear" />
+              <CalendarRemove size={16} color="#E70C0C" variant="Linear" />
             </View>
             <Text
               style={{ color: '#E70C0C' }}
-              className="text-[14px] font-urbanist-semibold tracking-tight"
+              className="text-[12px] font-urbanist-semibold tracking-tight"
             >
               Overdue: {student.amount || '₹1,200'}
             </Text>
@@ -210,13 +194,13 @@ export default function StudentCard({
                 borderRadius: 9999,
                 ...styles.GreenShadowStyle,
               }}
-              className="w-[32px] h-[32px] rounded-full items-center justify-center border"
+              className="p-1.5 rounded-full items-center justify-center border"
             >
-              <Calendar size={16} color={COLORS.greenPrimary} variant="Linear" />
+              <ProfileTick size={16} color={COLORS.greenPrimary} variant="Linear" />
             </View>
             <Text
               style={{ color: COLORS.greenPrimary }}
-              className="text-[14px] font-urbanist-semibold tracking-tight"
+              className="text-[12px] font-urbanist-semibold tracking-tight"
             >
               Paid On: {student.paidDate}
             </Text>
@@ -232,11 +216,11 @@ export default function StudentCard({
                 : 'rgba(231, 12, 12, 0.10)',
               borderColor: isRatioSuccess ? COLORS.greenBorder : '#F8B4B4',
               borderRadius: 9999,
-              ...(isRatioSuccess ? styles.GreenShadowStyle : {}),
+              ...(isRatioSuccess ? styles.GreenShadowStyle : styles.RedShadowStyle),
             }}
-            className="w-[32px] h-[32px] rounded-full items-center justify-center border"
+            className="p-1.5 rounded-full items-center justify-center border"
           >
-            <Calendar
+            <CalendarTick
               size={16}
               color={isRatioSuccess ? COLORS.greenPrimary : '#E70C0C'}
               variant="Linear"
@@ -247,14 +231,14 @@ export default function StudentCard({
               style={{
                 color: isRatioSuccess ? COLORS.greenPrimary : '#E70C0C',
               }}
-              className="text-[15px] font-urbanist-bold tracking-tight"
+              className="text-[13px] font-urbanist-bold tracking-tight"
             >
               {presentCount}
             </Text>
             <Text
               style={{
                 color: isRatioSuccess ? COLORS.greenPrimary : '#E70C0C',
-                fontSize: 11,
+                fontSize: 10,
               }}
               className="font-urbanist-medium"
             >

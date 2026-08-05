@@ -1,11 +1,14 @@
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
 import Search from '@/components/ui/Search';
+import StudentOptionsBottomSheet from '@/components/ui/StudentOptionsBottomSheet';
+import styles from '@/styles/styles';
 import { router } from 'expo-router';
-import { Setting2 } from 'iconsax-react-native';
+import { Setting2, Layer } from 'iconsax-react-native';
 import React, { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 import StudentCard, { StudentListItem } from './StudentCard';
 import StudentStatCards from './StudentStatCards';
 
@@ -83,7 +86,10 @@ export default function StudentListOverview({
   onBackPress,
   onStudentPress,
 }: StudentListOverviewProps) {
+  const { handleScroll } = useTabBarVisibility();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState<StudentListItem | null>(null);
+  const [isOptionsSheetVisible, setIsOptionsSheetVisible] = useState(false);
 
   const filteredStudents = useMemo(() => {
     if (!searchQuery.trim()) return students;
@@ -99,9 +105,21 @@ export default function StudentListOverview({
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
-    } else {
+    } else if (router.canGoBack()) {
       router.back();
+    } else {
+      router.replace('/(tabs)/batches' as any);
     }
+  };
+
+  const handleOpenOptions = (student: StudentListItem) => {
+    setSelectedStudent(student);
+    setIsOptionsSheetVisible(true);
+  };
+
+  const handleCloseOptions = () => {
+    setIsOptionsSheetVisible(false);
+    setSelectedStudent(null);
   };
 
   return (
@@ -127,8 +145,9 @@ export default function StudentListOverview({
 
       {/* Main Scrollable Content */}
       <Animated.ScrollView
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        scrollEventThrottle={1}
         decelerationRate={0.998}
         contentContainerStyle={{
           paddingHorizontal: 20,
@@ -139,12 +158,11 @@ export default function StudentListOverview({
         {/* Batch Header Info */}
 
         <Text className="text-[24px] font-urbanist-bold text-primary mb-1.5">
-       {batchName}
+          {batchName}
         </Text>
         <Text className="text-[16px] font-urbanist-medium text-secondary mb-5">
           {batchSubtitle}
         </Text>
-       
 
         {/* Reusable Stat Cards Row */}
         <StudentStatCards
@@ -168,20 +186,52 @@ export default function StudentListOverview({
                 key={student.id}
                 student={student}
                 onPress={onStudentPress}
-                onMorePress={(st) =>
-                  console.log('More options for student:', st.name)
-                }
+                onMorePress={handleOpenOptions}
               />
             ))
           ) : (
-            <View className="bg-white rounded-[24px] p-8 items-center justify-center border border-[#E5E5EA]">
-              <Text className="text-[16px] font-urbanist-semibold text-secondary">
-                No students found matching "{searchQuery}"
+            <View style={styles.BoxStyle} className="py-8 items-center justify-center">
+              <View style={styles.IconStyle} className="mb-2 p-2.5">
+                <Layer size={24} color="#8A8A8E" variant="Linear" />
+              </View>
+              <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
+                No Students Found
+              </Text>
+              <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
+                There are no students matching your selected filter.
               </Text>
             </View>
           )}
         </View>
       </Animated.ScrollView>
+
+      {/* Student Options Bottom Sheet Drawer */}
+      <StudentOptionsBottomSheet
+        visible={isOptionsSheetVisible}
+        student={selectedStudent}
+        onClose={handleCloseOptions}
+        onViewProfile={(st) => {
+          console.log('View Profile for:', st.name);
+          onStudentPress?.(st);
+        }}
+        onEditStudent={(st) => {
+          console.log('Edit Student:', st.name);
+        }}
+        onCallParent={(st) => {
+          if (st.phone) {
+            Linking.openURL(`tel:${st.phone}`);
+          }
+        }}
+        onAttendanceHistory={(st) => {
+          console.log('Attendance History for:', st.name);
+        }}
+        onPaymentHistory={(st) => {
+          console.log('Payment History for:', st.name);
+        }}
+        onDeleteStudent={(st) => {
+          console.log('Delete Student:', st.name);
+        }}
+      />
     </ScreenWrapper>
   );
 }

@@ -6,8 +6,10 @@ import UpcomingSessions from '@/features/dashboard/UpcomingSessions';
 import PendingFee from '@/features/dashboard/PendingFee';
 import React, { useState } from 'react';
 import Animated, { SlideInRight, Easing } from 'react-native-reanimated';
+import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 
 export default function DashboardScreen() {
+  const { handleScroll } = useTabBarVisibility();
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
@@ -31,8 +33,9 @@ export default function DashboardScreen() {
         />
 
         <Animated.ScrollView
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
-          scrollEventThrottle={1}
           decelerationRate={0.998}
           bounces={true}
           alwaysBounceVertical={true}
