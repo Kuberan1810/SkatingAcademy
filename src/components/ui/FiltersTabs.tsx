@@ -80,7 +80,7 @@ export default function FiltersTabs({
             key={tabId}
             activeOpacity={0.7}
             onPress={() => onSelectTab(tabId)}
-            style={isActive ? [styles.InnerShadowStyle] : [styles.BlackInnerShadowStyle]}
+            style={isActive ? [styles.InnerShadowStyle] : undefined}
             className={`px-5 py-3 rounded-[10px] border flex-row items-center justify-center ${isActive
               ? `bg-black border-black ${activeTabClassName}`
               : `bg-[#F7F7F7] border-primary-border  ${inactiveTabClassName}`

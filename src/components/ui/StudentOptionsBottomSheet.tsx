@@ -108,7 +108,9 @@ export default function StudentOptionsBottomSheet({
 
   React.useEffect(() => {
     if (visible) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch (e) {}
       setShowModal(true);
       slideAnim.setValue(height);
       fadeAnim.setValue(0);
@@ -151,7 +153,6 @@ export default function StudentOptionsBottomSheet({
       icon: User,
       isDanger: false,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onClose();
         if (student) onViewProfile?.(student);
       },
@@ -162,7 +163,6 @@ export default function StudentOptionsBottomSheet({
       icon: Edit,
       isDanger: false,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onClose();
         if (student) onEditStudent?.(student);
       },
@@ -173,7 +173,6 @@ export default function StudentOptionsBottomSheet({
       icon: Call,
       isDanger: false,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onClose();
         if (student) onCallParent?.(student);
       },
@@ -184,7 +183,6 @@ export default function StudentOptionsBottomSheet({
       icon: Calendar,
       isDanger: false,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onClose();
         if (student) onAttendanceHistory?.(student);
       },
@@ -195,7 +193,6 @@ export default function StudentOptionsBottomSheet({
       icon: Card,
       isDanger: false,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onClose();
         if (student) onPaymentHistory?.(student);
       },
@@ -206,7 +203,6 @@ export default function StudentOptionsBottomSheet({
       icon: Trash,
       isDanger: true,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onClose();
         if (student) onDeleteStudent?.(student);
       },
@@ -250,7 +246,22 @@ export default function StudentOptionsBottomSheet({
             {options.map((item) => (
               <Pressable
                 key={item.id}
-                onPress={item.onPress}
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(
+                      item.isDanger
+                        ? Haptics.ImpactFeedbackStyle.Medium
+                        : Haptics.ImpactFeedbackStyle.Light
+                    );
+                  } catch (e) {}
+                  item.onPress();
+                }}
+                onLongPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch (e) {}
+                }}
+                delayLongPress={200}
                 className="flex-row gap-3 py-3 px-5"
                 android_ripple={{
                   color: item.isDanger ? '#FEE2E2' : '#F1F5F9',

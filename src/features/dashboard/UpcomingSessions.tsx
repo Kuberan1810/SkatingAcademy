@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleProp, ViewStyle } from 'react-native';
 import { CalendarRemove } from 'iconsax-react-native';
+import { router } from 'expo-router';
 import FiltersTabs from '@/components/ui/FiltersTabs';
 import BtnCom from '@/components/ui/BtnCom';
 import UpcomingSessionsCard, { UpcomingSessionsCardProps } from '@/components/ui/UpcomingSessionsCard';
@@ -53,6 +54,14 @@ export default function UpcomingSessions({
 }: UpcomingSessionsProps) {
   const [activeFilter, setActiveFilter] = useState('All');
 
+  const handleViewAll = () => {
+    if (onViewAllPress) {
+      onViewAllPress();
+    } else {
+      router.push('/(tabs)/dashboard/upcoming-sessions' as any);
+    }
+  };
+
   const filteredSessions = sessions.filter((session) => {
     if (activeFilter === 'All') return true;
     return session.timeOfDay === activeFilter;
@@ -71,7 +80,7 @@ export default function UpcomingSessions({
           </Text>
         </View>
 
-        <BtnCom label="View all" onClick={onViewAllPress} />
+        <BtnCom label="View all" onClick={handleViewAll} />
       </View>
 
       {/* Filter Tabs */}

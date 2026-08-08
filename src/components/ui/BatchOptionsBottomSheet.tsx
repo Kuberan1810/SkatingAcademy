@@ -110,7 +110,9 @@ export default function BatchOptionsBottomSheet({
 
   React.useEffect(() => {
     if (visible) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch (e) {}
       setShowModal(true);
       slideAnim.setValue(height);
       fadeAnim.setValue(0);
@@ -153,7 +155,6 @@ export default function BatchOptionsBottomSheet({
       icon: Eye,
       isDanger: false,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onClose();
         if (batch) onViewDetails?.(batch);
       },
@@ -164,7 +165,6 @@ export default function BatchOptionsBottomSheet({
       icon: Edit,
       isDanger: false,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onClose();
         if (batch) onEditBatch?.(batch);
       },
@@ -175,7 +175,6 @@ export default function BatchOptionsBottomSheet({
       icon: Profile2User,
       isDanger: false,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onClose();
         if (batch) onManageAttendance?.(batch);
       },
@@ -186,7 +185,6 @@ export default function BatchOptionsBottomSheet({
       icon: Trash,
       isDanger: true,
       onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onClose();
         if (batch) onDeleteBatch?.(batch);
       },
@@ -200,7 +198,6 @@ export default function BatchOptionsBottomSheet({
       statusBarTranslucent
       animationType="none"
       onRequestClose={onClose}
-   
     >
       <View style={sheetStyles.overlay}>
         {/* Soft Backdrop */}
@@ -209,7 +206,7 @@ export default function BatchOptionsBottomSheet({
             style={sheetStyles.backdropTouch}
             activeOpacity={1}
             onPress={onClose}
-               className='duration-700'
+            className="duration-700"
           />
         </Animated.View>
 
@@ -231,8 +228,23 @@ export default function BatchOptionsBottomSheet({
             {options.map((item) => (
               <Pressable
                 key={item.id}
-                onPress={item.onPress}
-                className='flex-row  gap-3 py-3 px-5'
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(
+                      item.isDanger
+                        ? Haptics.ImpactFeedbackStyle.Medium
+                        : Haptics.ImpactFeedbackStyle.Light
+                    );
+                  } catch (e) {}
+                  item.onPress();
+                }}
+                onLongPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  } catch (e) {}
+                }}
+                delayLongPress={200}
+                className="flex-row gap-3 py-3 px-5"
                 android_ripple={{
                   color: item.isDanger ? '#FEE2E2' : '#F1F5F9',
                   borderless: false,

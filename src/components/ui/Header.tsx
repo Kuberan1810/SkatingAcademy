@@ -22,6 +22,7 @@ export interface HeaderProps {
 
     // Page Header Props
     title?: string;
+    subtitle?: string;
     showBack?: boolean;
     leftIcon?: IconPropType;
     onBackPress?: () => void;
@@ -87,6 +88,7 @@ export default function Header({
     greeting = 'Welcome',
     avatarSource = DEFAULT_AVATAR,
     title,
+    subtitle,
     showBack = true,
     leftIcon = ArrowLeft2,
     onBackPress,
@@ -132,10 +134,17 @@ export default function Header({
                     <View className="w-[44px] h-[44px]" />
                 )}
 
-                {/* Center: Title */}
-                <Text className="text-[20px] font-urbanist-bold text-primary text-center flex-1 mx-2" numberOfLines={1}>
-                    {title}
-                </Text>
+                {/* Center: Title & Optional Subtitle */}
+                <View className="flex-1 mx-2 items-center justify-center">
+                    <Text className="text-[20px] font-urbanist-bold text-primary text-center" numberOfLines={1}>
+                        {title}
+                    </Text>
+                    {subtitle && (
+                        <Text className="text-[16px] font-urbanist-medium text-secondary text-center mt-1" numberOfLines={1}>
+                            {subtitle}
+                        </Text>
+                    )}
+                </View>
 
                 {/* Right: Custom Right Icon */}
                 {rightIcon ? (

@@ -9,3 +9,5 @@ export * from './RecentPaymentCard';
 
 export { default as RecentPaymentsOverview } from './RecentPaymentsOverview';
 export * from './RecentPaymentsOverview';
+
+export * from './CollectFee';

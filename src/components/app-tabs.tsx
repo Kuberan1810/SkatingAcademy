@@ -91,6 +91,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     (pathname && pathname.toLowerCase().includes('studentlistscreen')) ||
     (pathname && pathname.toLowerCase().includes('recent-payments')) ||
     (pathname && pathname.toLowerCase().includes('recentpaymentsscreen')) ||
+    (pathname && pathname.toLowerCase().includes('collectfee')) ||
     pathname === '/' ||
     pathname === '';
   const isMainRoute = !isAuthOrFullScreenRoute;
@@ -198,7 +199,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
   return (
     <Animated.View style={[{
       position: 'absolute',
-      bottom: 24,
+      bottom: 16,
       left: 16,
       right: 16,
       flexDirection: 'row',

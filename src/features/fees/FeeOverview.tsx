@@ -256,7 +256,10 @@ export default function FeeOverview({
                 key={student.id}
                 student={student}
                 onPress={onStudentPress}
-                onCollectPress={onCollectFeePress}
+                onCollectPress={
+                  onCollectFeePress ||
+                  (() => router.push('/(tabs)/fees/CollectFee' as any))
+                }
               />
             ))
           ) : (

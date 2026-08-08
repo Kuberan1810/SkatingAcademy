@@ -36,20 +36,30 @@ export default function BatchesScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        decelerationRate={0.998}
+        decelerationRate="normal"
         bounces={true}
         alwaysBounceVertical={true}
-        directionalLockEnabled={true}
-        overScrollMode="never"
+        overScrollMode="always"
         keyboardShouldPersistTaps="handled"
         scrollsToTop={true}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 200 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 140,
+        }}
       >
         <Overview />
         <BatchList
-          onBatchPress={(item) => router.push('/(tabs)/batches/StudentListScreen')}
+          onBatchPress={(item) => {
+            if (item.status === 'completed' || !!item.attendance) {
+              router.push('/(tabs)/batches/completed-class' as any);
+            } else {
+              router.push('/(tabs)/batches/StudentListScreen' as any);
+            }
+          }}
           onStartPress={(item) => router.push('/(tabs)/batches/start-class')}
-          onAttendancePress={(item) => router.push('/(tabs)/batches/start-class')}
+          onAttendancePress={(item) => router.push('/(tabs)/batches/completed-class' as any)}
           onMorePress={(item) => console.log('More options for:', item.title)}
         />
       </Animated.ScrollView>

@@ -12,6 +12,7 @@ export default function FeesLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="recent-payments" />
+      <Stack.Screen name="CollectFee" />
     </Stack>
   );
 }
