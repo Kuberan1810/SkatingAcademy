@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, Linking } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, Linking, BackHandler } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Add, Diagram, Profile2User, Calendar } from 'iconsax-react-native';
@@ -9,6 +9,7 @@ import Header from '@/components/ui/Header';
 import Search from '@/components/ui/Search';
 import SortBottomSheet, { SortOptionItem } from '@/components/ui/SortBottomSheet';
 import StudentOptionsBottomSheet from '@/components/ui/StudentOptionsBottomSheet';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 import { StudentListItem } from '@/features/batches/StudentListScreen/StudentCard';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 import AddStudentScreen from '@/features/creation/studentCreation/AddStudentScreen';
@@ -105,17 +106,66 @@ export default function AllStudentsOverview({
   onStudentPress,
 }: AllStudentsOverviewProps) {
   const { handleScroll } = useTabBarVisibility();
+  const [studentList, setStudentList] = useState<StudentListItem[]>(students);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedSortId, setSelectedSortId] = useState('attendance_high');
   const [isSortSheetVisible, setIsSortSheetVisible] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentListItem | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<StudentListItem | null>(null);
+  const [studentToEdit, setStudentToEdit] = useState<StudentListItem | null>(null);
   const [isOptionsSheetVisible, setIsOptionsSheetVisible] = useState(false);
 
   const [isAddStudentVisible, setIsAddStudentVisible] = useState(false);
 
+  // Handle hardware back press on Android
+  useEffect(() => {
+    const backAction = () => {
+      if (studentToDelete) {
+        setStudentToDelete(null);
+        return true;
+      }
+      if (isSortSheetVisible) {
+        setIsSortSheetVisible(false);
+        return true;
+      }
+      if (isOptionsSheetVisible) {
+        setIsOptionsSheetVisible(false);
+        setSelectedStudent(null);
+        return true;
+      }
+      if (isAddStudentVisible) {
+        setIsAddStudentVisible(false);
+        return true;
+      }
+      if (studentToEdit) {
+        setStudentToEdit(null);
+        return true;
+      }
+      if (onBackPress) {
+        onBackPress();
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [
+    studentToDelete,
+    isSortSheetVisible,
+    isOptionsSheetVisible,
+    isAddStudentVisible,
+    studentToEdit,
+    onBackPress,
+  ]);
+
   const filteredStudents = useMemo(() => {
-    let result = students.filter((s) => {
+    let result = studentList.filter((s) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -159,8 +209,14 @@ export default function AllStudentsOverview({
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
-    } else if (router.canGoBack()) {
-      router.back();
+    } else {
+      try {
+        if (router.canGoBack()) {
+          router.back();
+        }
+      } catch (e) {
+        console.log('Navigation back error:', e);
+      }
     }
   };
 
@@ -175,6 +231,130 @@ export default function AllStudentsOverview({
     setIsOptionsSheetVisible(true);
   };
 
+  const navigateToProfile = (student: StudentListItem) => {
+    router.push({
+      pathname: '/(tabs)/students/[id]',
+      params: {
+        id: student.id,
+        studentData: JSON.stringify({
+          id: student.id,
+          name: student.name,
+          avatar: student.avatar,
+          joinedDate: student.joinedDate || '10 Jul 2026',
+          location: student.location || 'Sathya Stadium',
+          attendancePercent: student.attendancePercent || '92%',
+          parentInfo: {
+            parentName: student.parentName || 'Rajesh Sharma',
+            phone: student.phone || '+91 98765 43210',
+            emergency: student.emergencyContact || '+91 98765 43211',
+          },
+          personalInfo: {
+            gender: student.gender || 'Male',
+            dob: student.dob || '2012-05-14',
+            bloodGroup: student.bloodGroup || 'B+',
+            address: student.address || '12 MG Road, Bengaluru 560001',
+          },
+          feeInfo: {
+            monthlyFee: student.amount || '₹2,400',
+            pending: student.paymentStatus === 'paid' ? '₹0' : '₹1,200',
+            status: student.paymentStatus === 'paid' ? 'PAID' : 'OVERDUE',
+          },
+          attendanceStats: {
+            present: 86,
+            absent: 4,
+            attendancePercent: student.attendancePercent || '92%',
+            scheduledDaysCount: 12,
+          },
+          attendanceGrid: [
+            { dayName: 'Sun', dayNumber: '28', fullDate: '2025-12-28', status: 'none' },
+            { dayName: 'Mon', dayNumber: '29', fullDate: '2025-12-29', status: 'present' },
+            { dayName: 'Tue', dayNumber: '30', fullDate: '2025-12-30', status: 'present' },
+            { dayName: 'Wed', dayNumber: '31', fullDate: '2025-12-31', status: 'present' },
+            { dayName: 'Thu', dayNumber: '01', fullDate: '2026-01-01', status: 'present' },
+            { dayName: 'Fri', dayNumber: '02', fullDate: '2026-01-02', status: 'present' },
+            { dayName: 'Sat', dayNumber: '03', fullDate: '2026-01-03', status: 'present' },
+
+            { dayName: 'Sun', dayNumber: '03', fullDate: '2026-01-04', status: 'none' },
+            { dayName: 'Mon', dayNumber: '04', fullDate: '2026-01-05', status: 'present' },
+            { dayName: 'Tue', dayNumber: '05', fullDate: '2026-01-06', status: 'present' },
+            { dayName: 'Wed', dayNumber: '06', fullDate: '2026-01-07', status: 'present' },
+            { dayName: 'Thu', dayNumber: '07', fullDate: '2026-01-08', status: 'present' },
+            { dayName: 'Fri', dayNumber: '08', fullDate: '2026-01-09', status: 'present' },
+            { dayName: 'Sat', dayNumber: '09', fullDate: '2026-01-10', status: 'present' },
+
+            { dayName: 'Sun', dayNumber: '10', fullDate: '2026-01-11', status: 'none' },
+            { dayName: 'Mon', dayNumber: '11', fullDate: '2026-01-12', status: 'present' },
+            { dayName: 'Tue', dayNumber: '12', fullDate: '2026-01-13', status: 'present' },
+            { dayName: 'Wed', dayNumber: '13', fullDate: '2026-01-14', status: 'present' },
+            { dayName: 'Thu', dayNumber: '14', fullDate: '2026-01-15', status: 'absent' },
+            { dayName: 'Fri', dayNumber: '15', fullDate: '2026-01-16', status: 'current' },
+            { dayName: 'Sat', dayNumber: '16', fullDate: '2026-01-17', status: 'none' },
+
+            { dayName: 'Sun', dayNumber: '17', fullDate: '2026-01-18', status: 'none' },
+            { dayName: 'Mon', dayNumber: '18', fullDate: '2026-01-19', status: 'absent' },
+            { dayName: 'Tue', dayNumber: '19', fullDate: '2026-01-20', status: 'none' },
+            { dayName: 'Wed', dayNumber: '20', fullDate: '2026-01-21', status: 'none' },
+            { dayName: 'Thu', dayNumber: '21', internal: true, fullDate: '2026-01-22', status: 'none' },
+            { dayName: 'Fri', dayNumber: '22', fullDate: '2026-01-23', status: 'none' },
+            { dayName: 'Sat', dayNumber: '23', fullDate: '2026-01-24', status: 'none' },
+          ],
+          balanceSummary: {
+            lastPaidAmount: '₹1,250',
+            lastPaidDate: 'Paid on 12 Jul 2026',
+            nextPaymentAmount: '₹1,250',
+            nextPaymentDueDate: '05 Aug 2026',
+            daysLeftText: '12 Days Left',
+          },
+          currentMonthFee: {
+            monthYear: 'AUGUST 2026',
+            amount: student.amount || '₹1,250',
+            status: student.paymentStatus === 'overdue' ? 'overdue' : 'paid',
+            statusSubtext: student.paymentStatus === 'overdue' ? 'Over due' : 'Paid on 05 Aug',
+            paymentDetails: student.paymentStatus === 'overdue' ? 'Due: 05 Aug 2026' : 'Paid by: GPay / Cash',
+          },
+          transactions: [
+            {
+              id: 'tx-1',
+              title: 'August Fee',
+              dateAndMethod: '12 Aug 2026 • UPI',
+              amount: '₹1,250',
+              status: 'PAID',
+            },
+            {
+              id: 'tx-2',
+              title: 'July Fee',
+              dateAndMethod: '19 Jul 2026 • Cash',
+              amount: '₹1,250',
+              status: 'PAID',
+            },
+            {
+              id: 'tx-3',
+              title: 'June Fee',
+              dateAndMethod: '19 Jun 2026 • UPI',
+              amount: '₹1,250',
+              status: 'PAID',
+            },
+            {
+              id: 'tx-4',
+              title: 'May Fee',
+              dateAndMethod: '19 May 2026 • CASH',
+              amount: '₹1,250',
+              status: 'PAID',
+            },
+          ],
+        }),
+      },
+    } as any);
+  };
+
+  const handleStudentPress = (student: StudentListItem) => {
+    if (onStudentPress) {
+      onStudentPress(student);
+    } else {
+      navigateToProfile(student);
+    }
+  };
+
   const handleOpenAddStudent = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -185,6 +365,48 @@ export default function AllStudentsOverview({
       setIsAddStudentVisible(true);
     }
   };
+
+  if (studentToEdit) {
+    return (
+      <AddStudentScreen
+        mode="edit"
+        initialValues={{
+          avatarUri: typeof studentToEdit.avatar === 'string' ? studentToEdit.avatar : null,
+          fullName: studentToEdit.name,
+          gender: studentToEdit.gender || 'Male',
+          dob: studentToEdit.dob || '2012-05-14',
+          bloodGroup: studentToEdit.bloodGroup || 'B+',
+          batch: studentToEdit.location || 'Morning Beginners',
+          joinDate: studentToEdit.joinedDate || '',
+          parentName: studentToEdit.parentName || 'Rajesh Sharma',
+          phoneNumber: studentToEdit.phone || '+91 98765 43210',
+          emergencyContact: studentToEdit.emergencyContact || '+91 98765 43211',
+          monthlyFee: studentToEdit.amount || '₹1,250',
+        }}
+        onBackPress={() => setStudentToEdit(null)}
+        onSubmit={(updated) => {
+          const updatedItem: StudentListItem = {
+            ...studentToEdit,
+            name: updated.fullName || studentToEdit.name,
+            location: updated.batch || studentToEdit.location,
+            phone: updated.phoneNumber || studentToEdit.phone,
+            amount: updated.monthlyFee || studentToEdit.amount,
+            joinedDate: updated.joinDate || studentToEdit.joinedDate,
+            parentName: updated.parentName || studentToEdit.parentName,
+            emergencyContact: updated.emergencyContact || studentToEdit.emergencyContact,
+            gender: (updated.gender as any) || studentToEdit.gender,
+            dob: updated.dob || studentToEdit.dob,
+            bloodGroup: updated.bloodGroup || studentToEdit.bloodGroup,
+            avatar: updated.avatarUri || studentToEdit.avatar,
+          };
+          setStudentList((prev) =>
+            prev.map((s) => (s.id === studentToEdit.id ? updatedItem : s))
+          );
+          setStudentToEdit(null);
+        }}
+      />
+    );
+  }
 
   if (isAddStudentVisible) {
     return (
@@ -257,7 +479,7 @@ export default function AllStudentsOverview({
           students={filteredStudents}
           activeFilter={activeFilter}
           onSelectFilter={setActiveFilter}
-          onStudentPress={onStudentPress}
+          onStudentPress={handleStudentPress}
           onCallPress={handleCallStudent}
           onMorePress={handleOpenOptions}
         />
@@ -273,13 +495,28 @@ export default function AllStudentsOverview({
             setSelectedStudent(null);
           }}
           onViewProfile={() => {
-            console.log('View Profile for:', selectedStudent.name);
+            const studentToView = selectedStudent;
+            setIsOptionsSheetVisible(false);
+            setSelectedStudent(null);
+            if (studentToView) {
+              navigateToProfile(studentToView);
+            }
           }}
-          onEditStudent={() => {
-            console.log('Edit Student for:', selectedStudent.name);
+          onEditStudent={(st) => {
+            const studentTarget = st || selectedStudent;
+            setIsOptionsSheetVisible(false);
+            setSelectedStudent(null);
+            if (studentTarget) {
+              setStudentToEdit(studentTarget);
+            }
           }}
-          onDeleteStudent={() => {
-            console.log('Remove Student:', selectedStudent.name);
+          onDeleteStudent={(st) => {
+            const studentTarget = st || selectedStudent;
+            setIsOptionsSheetVisible(false);
+            setSelectedStudent(null);
+            setTimeout(() => {
+              setStudentToDelete(studentTarget);
+            }, 250);
           }}
         />
       )}
@@ -292,6 +529,19 @@ export default function AllStudentsOverview({
         selectedOptionId={selectedSortId}
         onSelectOption={(optionId) => setSelectedSortId(optionId)}
         onClose={() => setIsSortSheetVisible(false)}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        visible={!!studentToDelete}
+        itemName={studentToDelete?.name}
+        onClose={() => setStudentToDelete(null)}
+        onConfirm={() => {
+          if (studentToDelete) {
+            setStudentList((prev) => prev.filter((s) => s.id !== studentToDelete.id));
+            setStudentToDelete(null);
+          }
+        }}
       />
     </ScreenWrapper>
   );

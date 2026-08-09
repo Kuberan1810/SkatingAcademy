@@ -93,17 +93,19 @@ export default function UpcomingSessionsCard({
       ? studentsCount
       : `${studentsCount} Students`;
 
-  const Container = onPressCard ? TouchableOpacity : View;
+  const LeftContainer = onPressCard ? TouchableOpacity : View;
 
   return (
-    <Container
-      activeOpacity={0.85}
-      onPress={onPressCard}
+    <View
       style={[styles.BoxStyle, style]}
       className={`flex-row items-center justify-between ${className}`}
     >
-      {/* Left Details */}
-      <View className="flex-1 mr-3 justify-center">
+      {/* Left Details (Clickable if onPressCard provided) */}
+      <LeftContainer
+        activeOpacity={0.8}
+        onPress={onPressCard}
+        className="flex-1 mr-3 justify-center"
+      >
         {/* Title */}
         <Text className="text-[20px] font-urbanist-semibold text-primary tracking-tight mb-2">
           {title}
@@ -131,14 +133,14 @@ export default function UpcomingSessionsCard({
             </Text>
           </View>
         </View>
-      </View>
+      </LeftContainer>
 
-      {/* Right Action Button */}
+      {/* Right Action Button (Independent Touchable) */}
       <StatusPillButton
         status={status}
         label={statusLabel}
         onPress={onStatusPress}
       />
-    </Container>
+    </View>
   );
 }

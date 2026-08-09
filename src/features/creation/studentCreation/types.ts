@@ -20,6 +20,9 @@ export interface StudentFormData {
 
 export interface AddStudentScreenProps {
   initialValues?: Partial<StudentFormData>;
+  mode?: 'create' | 'edit';
+  headerTitle?: string;
+  submitButtonText?: string;
   onBackPress?: () => void;
   onSubmit?: (data: StudentFormData) => void;
   onReset?: () => void;

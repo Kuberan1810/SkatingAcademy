@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Setting2, Layer } from 'iconsax-react-native';
+import {  Layer, ExportSquare } from 'iconsax-react-native';
 import { router } from 'expo-router';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
@@ -168,7 +168,7 @@ export default function FeeOverview({
         variant="page"
         title={screenTitle}
         onBackPress={handleBack}
-        rightIcon={Setting2}
+        rightIcon={ExportSquare}
         onRightPress={() => {
           console.log('Settings pressed');
         }}

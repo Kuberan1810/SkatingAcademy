@@ -116,8 +116,14 @@ export default function Header({
     const handleBack = () => {
         if (onBackPress) {
             onBackPress();
-        } else if (router.canGoBack()) {
-            router.back();
+        } else {
+            try {
+                if (router.canGoBack()) {
+                    router.back();
+                }
+            } catch (e) {
+                console.log('Navigation back error:', e);
+            }
         }
     };
 

@@ -24,7 +24,7 @@ export default function LoginCom() {
                 <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24 }}>
                     <View className='mb-10 '>
                         {/* BACK */}
-                        <View className='mb-6'>
+                        <View className='mb-12'>
                             <GoBack />
                         </View>
 

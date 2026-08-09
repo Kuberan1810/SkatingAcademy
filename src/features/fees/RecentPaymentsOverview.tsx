@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Setting2, Layer } from 'iconsax-react-native';
+import { Setting2, Layer, ExportSquare } from 'iconsax-react-native';
 import { router } from 'expo-router';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
@@ -132,10 +132,12 @@ export default function RecentPaymentsOverview({
         variant="page"
         title={screenTitle}
         onBackPress={handleBack}
-        rightIcon={Setting2}
-        onRightPress={() => {
-          console.log('Settings pressed in Recent Payments');
-        }}
+        // rightIcon={Setting2}
+        // onRightPress={() => {
+        //   console.log('Settings pressed in Recent Payments');
+        // }}
+        rightIcon={ExportSquare}
+
       />
 
       {/* Search Input */}

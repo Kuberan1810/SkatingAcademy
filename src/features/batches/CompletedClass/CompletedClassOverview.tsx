@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleProp, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Setting2 } from 'iconsax-react-native';
+import { Trash } from 'iconsax-react-native';
 import { router } from 'expo-router';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
 import Search from '@/components/ui/Search';
 import FiltersTabs from '@/components/ui/FiltersTabs';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
+import CreateBatchScreen from '@/features/creation/BatchCreation/CreateBatchScreen';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 
 import CompletedStudentCard, { CompletedStudentItem } from './CompletedStudentCard';
@@ -23,6 +25,8 @@ export interface CompletedClassOverviewProps {
   absentCount?: number;
   students?: CompletedStudentItem[];
   onBackPress?: () => void;
+  onDeleteBatchPress?: () => void;
+  onEditBatchPress?: () => void;
   style?: StyleProp<ViewStyle>;
   className?: string;
 }
@@ -73,9 +77,16 @@ export default function CompletedClassOverview({
   absentCount = 4,
   students = DEFAULT_STUDENTS,
   onBackPress,
+  onDeleteBatchPress,
+  onEditBatchPress,
 }: CompletedClassOverviewProps) {
   // Hide tab bar while viewing completed class details
   const { hideTabBar, showTabBar } = useTabBarVisibility();
+
+  const [currentBatchName, setCurrentBatchName] = useState(batchName);
+  const [currentBatchTitle, setCurrentBatchTitle] = useState(batchTitle);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isEditBatchVisible, setIsEditBatchVisible] = useState(false);
 
   useEffect(() => {
     hideTabBar();
@@ -112,16 +123,43 @@ export default function CompletedClassOverview({
     }
   };
 
+  if (isEditBatchVisible) {
+    return (
+      <CreateBatchScreen
+        mode="edit"
+        initialValues={{
+          batchName: currentBatchName,
+          level: 'Basic',
+          location: 'Sathya Stadium',
+          classType: 'Weekend',
+          trainingDays: 'Sat, Sun',
+          startTime: '06:00 AM',
+          endTime: '07:30 AM',
+          monthlyFee: '₹1,250',
+          yearlyFee: '₹1,250',
+        }}
+        onBackPress={() => setIsEditBatchVisible(false)}
+        onSubmit={(data) => {
+          if (data.batchName) {
+            setCurrentBatchName(data.batchName);
+            setCurrentBatchTitle(`${data.batchName} Students`);
+          }
+          setIsEditBatchVisible(false);
+        }}
+      />
+    );
+  }
+
   return (
-    <ScreenWrapper >
+    <ScreenWrapper>
       {/* Page Header */}
       <Header
         variant="page"
-        title={batchTitle}
+        title={currentBatchTitle}
         showBack={true}
         onBackPress={handleBack}
-        rightIcon={Setting2}
-        onRightPress={() => console.log('Settings pressed')}
+        rightIcon={<Trash size={20} color="#EF4444" variant="Linear" />}
+        onRightPress={() => setIsDeleteModalVisible(true)}
       />
       {/* Search Input Bar */}
       <View className="mb-4 pt-1">
@@ -146,12 +184,10 @@ export default function CompletedClassOverview({
         decelerationRate="normal"
         scrollEventThrottle={16}
       >
-
-
         {/* Date Pill, Batch Name & Subtitle Section */}
         <CompletedClassHeaderSection
           dateText={dateText}
-          batchName={batchName}
+          batchName={currentBatchName}
           subtitle={subtitle}
         />
 
@@ -182,6 +218,25 @@ export default function CompletedClassOverview({
           ))}
         </View>
       </Animated.ScrollView>
+
+      {/* Delete Batch Confirmation Sheet */}
+      <DeleteConfirmationModal
+        visible={isDeleteModalVisible}
+        title="Delete Batch"
+        itemName={currentBatchName}
+        message={`Are you sure you want to remove ${currentBatchName}? All attendance history and enrolled students in this batch will be affected. This action cannot be undone.`}
+        confirmText="Yes, Delete"
+        onClose={() => setIsDeleteModalVisible(false)}
+        onConfirm={() => {
+          setIsDeleteModalVisible(false);
+          console.log('batch deleted:', currentBatchName);
+          if (onDeleteBatchPress) {
+            onDeleteBatchPress();
+          } else {
+            handleBack();
+          }
+        }}
+      />
     </ScreenWrapper>
   );
 }

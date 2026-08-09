@@ -6,11 +6,13 @@ import { StudentFormData } from '../types';
 export interface StepParentPaymentProps {
   formData: StudentFormData;
   updateField: (key: keyof StudentFormData, val: string) => void;
+  onFocusBottomField?: () => void;
 }
 
 export default function StepParentPayment({
   formData,
   updateField,
+  onFocusBottomField,
 }: StepParentPaymentProps) {
   return (
     <View className="gap-4 mb-6">
@@ -35,6 +37,7 @@ export default function StepParentPayment({
         value={formData.emergencyContact}
         onChangeText={(text) => updateField('emergencyContact', text)}
         keyboardType="phone-pad"
+        onFocus={onFocusBottomField}
       />
 
       <FormField
@@ -42,6 +45,8 @@ export default function StepParentPayment({
         placeholder="₹1,250"
         value={formData.monthlyFee}
         onChangeText={(text) => updateField('monthlyFee', text)}
+        keyboardType="numeric"
+        onFocus={onFocusBottomField}
       />
     </View>
   );

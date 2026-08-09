@@ -53,18 +53,18 @@ export default function AllStudentsList({
           <StudentCard
             key={student.id}
             student={student}
-            // onPress={(s) => {
-            //   try {
-            //     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            //   } catch (e) {}
-            //   onStudentPress?.(s);
-            // }}
-            // onCallPress={(phone) => {
-            //   try {
-            //     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            //   } catch (e) {}
-            //   onCallPress?.(phone);
-            // }}
+            onPress={(s) => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch (e) {}
+              onStudentPress?.(s);
+            }}
+            onCallPress={(phone) => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch (e) {}
+              onCallPress?.(phone);
+            }}
             onMorePress={(s) => {
               try {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

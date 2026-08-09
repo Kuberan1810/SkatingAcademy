@@ -19,11 +19,13 @@ export function TabBarVisibilityProvider({ children }: { children: React.ReactNo
   const lastScrollY = useRef(0);
 
   const hideTabBar = () => {
-    tabBarOffset.value = withTiming(120, { duration: 300 });
+    setTabBarVisible(false);
+    tabBarOffset.value = withTiming(120, { duration: 250 });
   };
 
   const showTabBar = () => {
-    tabBarOffset.value = withTiming(0, { duration: 300 });
+    setTabBarVisible(true);
+    tabBarOffset.value = withTiming(0, { duration: 250 });
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -31,11 +33,11 @@ export function TabBarVisibilityProvider({ children }: { children: React.ReactNo
     const diff = currentY - lastScrollY.current;
 
     if (currentY <= 10) {
-      showTabBar();
+      tabBarOffset.value = withTiming(0, { duration: 250 });
     } else if (diff > 10 && currentY > 50) {
-      hideTabBar();
+      tabBarOffset.value = withTiming(120, { duration: 250 });
     } else if (diff < -10) {
-      showTabBar();
+      tabBarOffset.value = withTiming(0, { duration: 250 });
     }
 
     lastScrollY.current = currentY;

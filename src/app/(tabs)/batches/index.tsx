@@ -6,7 +6,7 @@ import Search from '@/components/ui/Search';
 import Overview from '@/features/dashboard/Overview';
 import BatchList from '@/features/batches/BatchList';
 import { router } from 'expo-router';
-import { Setting2 } from 'iconsax-react-native';
+import { Add, Setting2 } from 'iconsax-react-native';
 
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 
@@ -20,10 +20,8 @@ export default function BatchesScreen() {
         variant="page"
         title="Batches"
         onBackPress={() => router.back()}
-        rightIcon={Setting2}
-        onRightPress={() => {
-          console.log('Settings pressed');
-        }}
+        rightIcon={Add}
+        onRightPress={() => router.push('/(tabs)/batches/add' as any)}
       />
       <Search
         value={searchQuery}
@@ -60,6 +58,18 @@ export default function BatchesScreen() {
           }}
           onStartPress={(item) => router.push('/(tabs)/batches/start-class')}
           onAttendancePress={(item) => router.push('/(tabs)/batches/completed-class' as any)}
+          onEditBatch={(item) => {
+            router.push({
+              pathname: '/(tabs)/batches/add',
+              params: {
+                mode: 'edit',
+                batchName: item.title,
+                level: 'Basic',
+                location: 'Sathya Stadium',
+              },
+            } as any);
+          }}
+          onDeleteBatch={(item) => console.log('Deleted batch:', item.title)}
           onMorePress={(item) => console.log('More options for:', item.title)}
         />
       </Animated.ScrollView>

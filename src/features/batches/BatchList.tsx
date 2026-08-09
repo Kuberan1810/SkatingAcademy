@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import FiltersTabs from '@/components/ui/FiltersTabs';
 import BatchCard, { BatchCardProps } from '@/components/ui/BatchCard';
 import BatchOptionsBottomSheet from '@/components/ui/BatchOptionsBottomSheet';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 import styles from '@/styles/styles';
 
 export interface BatchItem extends BatchCardProps {
@@ -76,11 +77,13 @@ export default function BatchList({
     style,
     className = '',
 }: BatchListProps) {
+    const [batchList, setBatchList] = useState<BatchItem[]>(batches);
     const [activeFilter, setActiveFilter] = useState('All');
     const [selectedBatch, setSelectedBatch] = useState<BatchItem | null>(null);
+    const [batchToDelete, setBatchToDelete] = useState<BatchItem | null>(null);
     const [isOptionsVisible, setIsOptionsVisible] = useState(false);
 
-    const filteredBatches = batches.filter((batch) => {
+    const filteredBatches = batchList.filter((batch) => {
         if (activeFilter === 'All') return true;
         if (activeFilter === 'Completed') return batch.status === 'completed' || !!batch.attendance;
         if (activeFilter === 'Morning') return batch.category === 'Morning' || batch.title.toLowerCase().includes('morning');
@@ -132,16 +135,30 @@ export default function BatchList({
                             attendance={item.attendance}
                             status={item.status}
                             actionLabel={item.actionLabel}
-                            onPressCard={() =>
-                                onBatchPress
-                                    ? onBatchPress(item)
-                                    : router.push('/(tabs)/batches/StudentListScreen')
-                            }
-                            onActionPress={() =>
-                                item.status === 'completed' || item.attendance
-                                    ? onAttendancePress?.(item)
-                                    : onStartPress?.(item)
-                            }
+                            onPressCard={() => {
+                                if (onBatchPress) {
+                                    onBatchPress(item);
+                                } else if (item.status === 'completed' || item.attendance) {
+                                    router.push('/(tabs)/batches/completed-class' as any);
+                                } else {
+                                    router.push('/(tabs)/batches/StudentListScreen' as any);
+                                }
+                            }}
+                            onActionPress={() => {
+                                if (item.status === 'completed' || item.attendance) {
+                                    if (onAttendancePress) {
+                                        onAttendancePress(item);
+                                    } else {
+                                        router.push('/(tabs)/batches/completed-class' as any);
+                                    }
+                                } else {
+                                    if (onStartPress) {
+                                        onStartPress(item);
+                                    } else {
+                                        router.push('/(tabs)/batches/start-class' as any);
+                                    }
+                                }
+                            }}
                             onMorePress={() => handleOpenOptions(item)}
                         />
                     ))
@@ -168,7 +185,29 @@ export default function BatchList({
                 onViewDetails={(batch) => onViewDetails?.(batch as BatchItem)}
                 onEditBatch={(batch) => onEditBatch?.(batch as BatchItem)}
                 onManageAttendance={(batch) => onAttendancePress?.(batch as BatchItem)}
-                onDeleteBatch={(batch) => onDeleteBatch?.(batch as BatchItem)}
+                onDeleteBatch={(batch) => {
+                    setIsOptionsVisible(false);
+                    setTimeout(() => {
+                        setBatchToDelete(batch as BatchItem);
+                    }, 250);
+                }}
+            />
+
+            {/* Delete Batch Confirmation Sheet */}
+            <DeleteConfirmationModal
+                visible={!!batchToDelete}
+                title="Delete Batch"
+                itemName={batchToDelete?.title}
+                message={`Are you sure you want to remove ${batchToDelete?.title}? All enrolled students in this batch will be affected. This action cannot be undone.`}
+                confirmText="Yes, Delete"
+                onClose={() => setBatchToDelete(null)}
+                onConfirm={() => {
+                    if (batchToDelete) {
+                        setBatchList((prev) => prev.filter((b) => b.id !== batchToDelete.id));
+                        onDeleteBatch?.(batchToDelete);
+                        setBatchToDelete(null);
+                    }
+                }}
             />
         </View>
     );

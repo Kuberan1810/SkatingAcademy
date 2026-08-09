@@ -169,16 +169,16 @@ export default function BatchOptionsBottomSheet({
         if (batch) onEditBatch?.(batch);
       },
     },
-    {
-      id: 'attendance',
-      title: 'Manage Attendance',
-      icon: Profile2User,
-      isDanger: false,
-      onPress: () => {
-        onClose();
-        if (batch) onManageAttendance?.(batch);
-      },
-    },
+    // {
+    //   id: 'attendance',
+    //   title: 'Manage Attendance',
+    //   icon: Profile2User,
+    //   isDanger: false,
+    //   onPress: () => {
+    //     onClose();
+    //     if (batch) onManageAttendance?.(batch);
+    //   },
+    // },
     {
       id: 'delete',
       title: 'Delete Batch',

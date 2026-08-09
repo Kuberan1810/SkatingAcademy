@@ -95,16 +95,21 @@ export default function PendingFeeCard({
   const isDueToday = status?.toLowerCase().includes('today') || status === 'due_today';
   const isOverdue = status?.toLowerCase().includes('overdue') || !isDueToday;
 
+  const ClickableArea = onPressCard ? TouchableOpacity : View;
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={onPressCard}
+    <View
       style={[style, styles.BoxStyle2]}
       className={`relative bg-white ${className}`}
     >
       {/* Top Row: Avatar, Student Info & Action Buttons */}
       <View className="flex-row items-center justify-between mb-3">
-        <View className="flex-row items-center flex-1 mr-2">
+        {/* Clickable Student Info: Avatar + Name + Batch */}
+        <ClickableArea
+          activeOpacity={0.8}
+          onPress={onPressCard}
+          className="flex-row items-center flex-1 mr-2"
+        >
           <Image
             source={resolvedAvatar}
             style={{ width: 40, height: 40, borderRadius: 22 }}
@@ -125,9 +130,9 @@ export default function PendingFeeCard({
               {batchName}
             </Text>
           </View>
-        </View>
+        </ClickableArea>
 
-        {/* Action Buttons: Phone Call & Collect Fee */}
+        {/* Action Buttons: Phone Call & Collect Fee (Independent Touchables) */}
         <View className="flex-row items-center gap-2">
           {/* Circular Phone Action Button */}
           <TouchableOpacity
@@ -153,8 +158,12 @@ export default function PendingFeeCard({
         </View>
       </View>
 
-      {/* Bottom Row: Status Pills (Due Today & Overdue) */}
-      <View className="flex-row items-center flex-wrap gap-2">
+      {/* Bottom Row: Status Pills (Due Today & Overdue) - Also Clickable */}
+      <ClickableArea
+        activeOpacity={0.8}
+        onPress={onPressCard}
+        className="flex-row items-center flex-wrap gap-2"
+      >
         {/* Due Today Badge */}
         {isDueToday && (
           <View className="flex-row items-center pl-[3px] pr-3 py-[3px] rounded-full bg-[#F9F9F9] border border-primary-border gap-1.5">
@@ -200,7 +209,7 @@ export default function PendingFeeCard({
             </Text>
           </View>
         )}
-      </View>
-    </TouchableOpacity>
+      </ClickableArea>
+    </View>
   );
 }

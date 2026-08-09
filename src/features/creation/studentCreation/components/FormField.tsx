@@ -11,6 +11,8 @@ export interface FormFieldProps {
   icon?: React.ComponentType<any>;
   isDropdown?: boolean;
   onPressDropdown?: () => void;
+  onPress?: () => void;
+  onFocus?: () => void;
 }
 
 export default function FormField({
@@ -22,47 +24,57 @@ export default function FormField({
   icon: IconComponent,
   isDropdown = false,
   onPressDropdown,
+  onPress,
+  onFocus,
 }: FormFieldProps) {
-  if (isDropdown) {
+  if (isDropdown || onPress) {
+    const handlePress = onPressDropdown || onPress;
     return (
-      <View className="gap-1.5">
-        <Text className="text-[14px] font-urbanist-semibold text-[#374151]">
+      <View className="gap-2">
+        <Text className="text-[14px] font-urbanist-semibold text-primary">
           {label}
         </Text>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={onPressDropdown}
-          className="h-[50px] bg-white rounded-[16px] border border-[#F3F4F6] flex-row items-center px-4 justify-between"
+          onPress={handlePress}
+          className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-5 justify-between"
         >
           <Text
             className={`text-[15px] font-urbanist-medium ${
-              value ? 'text-[#111827]' : 'text-[#9CA3AF]'
+              value ? 'text-[#111827]' : 'text-[#A2A2A7]'
             }`}
           >
             {value || placeholder}
           </Text>
-          <ArrowDown2 size={18} color="#6B7280" variant="Linear" />
+          {isDropdown ? (
+            <ArrowDown2 size={18} color="#6B7280" variant="Linear" />
+          ) : IconComponent ? (
+            <IconComponent size={20} color="#A2A2A7" variant="Linear" />
+          ) : null}
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View className="gap-1.5">
-      <Text className="text-[14px] font-urbanist-semibold text-[#374151]">
+    <View className="gap-2">
+      <Text className="text-[14px] font-urbanist-semibold text-primary">
         {label}
       </Text>
-      <View className="h-[50px] bg-white rounded-[16px] border border-[#F3F4F6] flex-row items-center px-4 justify-between">
+      <View className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-5 justify-between">
         <TextInput
           className="flex-1 text-[15px] font-urbanist-medium text-[#111827] p-0"
           placeholder={placeholder}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#A2A2A7"
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
+          onFocus={onFocus}
         />
         {IconComponent && (
-          <IconComponent size={20} color="#9CA3AF" variant="Linear" />
+          <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+            <IconComponent size={20} color="#A2A2A7" variant="Linear" />
+          </TouchableOpacity>
         )}
       </View>
     </View>

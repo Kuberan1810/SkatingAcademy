@@ -77,60 +77,64 @@ export default function BatchCard({
   const buttonText =
     actionLabel || (isCompleted ? 'View Attendance' : 'Start');
 
-  const Container = onPressCard ? TouchableOpacity : View;
+  const BodyContainer = onPressCard ? TouchableOpacity : View;
 
   return (
-    <Container
-      activeOpacity={0.85}
-      onPress={onPressCard}
+    <View
       className={`p-6 border border-primary-border rounded-[30px] bg-white relative ${className}`}
       style={[style]}
     >
       {/* Top Row: Date/Attendance Badge + 3-Dots Menu Button */}
       <View className="flex-row items-center justify-between">
-        {/* Left Badge */}
-        {isCompleted ? (
-          <View className="flex-row items-center pl-[3px] pr-3 py-[3px] rounded-full bg-white border border-primary-border gap-2">
-            <View
-              style={{
-                backgroundColor: COLORS.greenLight,
-                borderColor: COLORS.greenBorder,
-                borderRadius: 9999,
-                ...styles.GreenShadowStyle,
-              }}
-              className="w-[32px] h-[32px] rounded-full items-center justify-center border"
-            >
-              <Profile2User size={16} color={COLORS.greenPrimary} variant="Linear" />
+        {/* Left Badge (Clickable as part of card body) */}
+        <BodyContainer
+          activeOpacity={0.85}
+          onPress={onPressCard}
+          className="flex-1 mr-2"
+        >
+          {isCompleted ? (
+            <View className="flex-row items-center pl-[3px] pr-3 py-[3px] rounded-full bg-white border border-primary-border gap-2 self-start">
+              <View
+                style={{
+                  backgroundColor: COLORS.greenLight,
+                  borderColor: COLORS.greenBorder,
+                  borderRadius: 9999,
+                  ...styles.GreenShadowStyle,
+                }}
+                className="w-[32px] h-[32px] rounded-full items-center justify-center border"
+              >
+                <Profile2User size={16} color={COLORS.greenPrimary} variant="Linear" />
+              </View>
+              <View className="flex-row items-baseline">
+                <Text
+                  style={{ color: COLORS.greenPrimary }}
+                  className="text-[14px] font-urbanist-semibold tracking-tight"
+                >
+                  Today Present:{' '}
+                </Text>
+                <Text
+                  style={{ color: COLORS.greenPrimary }}
+                  className="text-[15px] font-urbanist-semibold"
+                >
+                  {presentCount}
+                </Text>
+                <Text
+                  style={{ color: COLORS.greenPrimary, fontSize: 11 }}
+                  className="font-urbanist-medium"
+                >
+                  /{totalCount}
+                </Text>
+              </View>
             </View>
-            <View className="flex-row items-baseline">
-              <Text
-                style={{ color: COLORS.greenPrimary }}
-                className="text-[14px] font-urbanist-semibold tracking-tight"
-              >
-                Today Present:{' '}
-              </Text>
-              <Text
-                style={{ color: COLORS.greenPrimary }}
-                className="text-[15px] font-urbanist-semibold"
-              >
-                {presentCount}
-              </Text>
-              <Text
-                style={{ color: COLORS.greenPrimary, fontSize: 11 }}
-                className="font-urbanist-medium"
-              >
-                /{totalCount}
+          ) : (
+            <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FAFAFA] border border-primary-border gap-2.5 self-start">
+              <Calendar size={18} color={COLORS.secondary} variant="Linear" />
+              <Text className="text-[15px] font-urbanist-medium text-secondary tracking-tight">
+                {date}
               </Text>
             </View>
-          </View>
-        ) : (
-          <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FAFAFA] border border-primary-border gap-2.5">
-            <Calendar size={18} color={COLORS.secondary} variant="Linear" />
-            <Text className="text-[15px] font-urbanist-medium text-secondary tracking-tight">
-              {date}
-            </Text>
-          </View>
-        )}
+          )}
+        </BodyContainer>
 
         {/* Right: 3-Dots More Button */}
         <TouchableOpacity
@@ -142,43 +146,49 @@ export default function BatchCard({
         </TouchableOpacity>
       </View>
 
-      {/* Middle: Batch Title */}
-      <Text
-        numberOfLines={1}
-        className="text-[20px] font-urbanist-semibold text-primary tracking-tight mt-4 mb-4"
+      {/* Middle Body Area: Title & Meta Info */}
+      <BodyContainer
+        activeOpacity={0.85}
+        onPress={onPressCard}
       >
-        {title}
-      </Text>
+        {/* Batch Title */}
+        <Text
+          numberOfLines={1}
+          className="text-[20px] font-urbanist-semibold text-primary tracking-tight mt-4 mb-4"
+        >
+          {title}
+        </Text>
 
-      {/* Meta Info Row: Time & Students Count */}
-      <View className="flex-row items-center justify-between mb-5">
-        {/* Time */}
-        <View className="flex-row items-center gap-2">
-          <View style={styles.IconStyle}>
-            <Clock size={12} color="#626262" variant="Linear" />
+        {/* Meta Info Row: Time & Students Count */}
+        <View className="flex-row items-center justify-between mb-5">
+          {/* Time */}
+          <View className="flex-row items-center gap-2">
+            <View style={styles.IconStyle}>
+              <Clock size={12} color="#626262" variant="Linear" />
+            </View>
+            <Text className="text-[15px] font-urbanist-medium text-secondary">
+              {time}
+            </Text>
           </View>
-          <Text className="text-[15px] font-urbanist-medium text-secondary">
-            {time}
-          </Text>
-        </View>
 
-        {/* Students Count */}
-        <View className="flex-row items-center gap-2">
-          <View style={styles.IconStyle}>
-            <Profile2User size={12} color="#626262" variant="Linear" />
+          {/* Students Count */}
+          <View className="flex-row items-center gap-2">
+            <View style={styles.IconStyle}>
+              <Profile2User size={12} color="#626262" variant="Linear" />
+            </View>
+            <Text className="text-[15px] font-urbanist-medium text-secondary">
+              {formattedStudents}
+            </Text>
           </View>
-          <Text className="text-[15px] font-urbanist-medium text-secondary">
-            {formattedStudents}
-          </Text>
         </View>
-      </View>
+      </BodyContainer>
 
-      {/* Bottom Row: Reusable Primary Action Button */}
+      {/* Bottom Row: Reusable Primary Action Button (Independent Touchable) */}
       <PrimaryBtn
         label={buttonText}
         onPress={onActionPress}
         variant={isCompleted ? 'green' : 'black'}
       />
-    </Container>
+    </View>
   );
 }

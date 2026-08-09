@@ -12,7 +12,10 @@ export default function BatchesLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="StudentListScreen" />
+      <Stack.Screen name="student-profile" />
+      <Stack.Screen name="add" />
       <Stack.Screen name="start-class" />
+      <Stack.Screen name="completed-class" />
     </Stack>
   );
 }

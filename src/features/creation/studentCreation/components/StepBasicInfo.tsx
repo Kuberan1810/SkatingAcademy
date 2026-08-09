@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Calendar } from 'iconsax-react-native';
+import { CalendarEdit } from 'iconsax-react-native';
 import FormField from './FormField';
 import { StudentFormData } from '../types';
 
@@ -9,6 +9,7 @@ export interface StepBasicInfoProps {
   updateField: (key: keyof StudentFormData, val: string) => void;
   onOpenGenderPicker: () => void;
   onOpenBloodGroupPicker: () => void;
+  onOpenDatePicker?: () => void;
 }
 
 export default function StepBasicInfo({
@@ -16,6 +17,7 @@ export default function StepBasicInfo({
   updateField,
   onOpenGenderPicker,
   onOpenBloodGroupPicker,
+  onOpenDatePicker,
 }: StepBasicInfoProps) {
   return (
     <View className="gap-4 mb-6">
@@ -48,7 +50,8 @@ export default function StepBasicInfo({
         placeholder="DD / MM / YYYY"
         value={formData.dob}
         onChangeText={(text) => updateField('dob', text)}
-        icon={Calendar}
+        icon={CalendarEdit}
+        onPress={onOpenDatePicker}
       />
 
       <FormField

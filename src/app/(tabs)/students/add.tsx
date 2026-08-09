@@ -12,9 +12,6 @@ export default function AddStudentRoute() {
       }}
       onSubmit={(data) => {
         console.log('Submitted student:', data);
-        if (router.canGoBack()) {
-          router.back();
-        }
       }}
     />
   );

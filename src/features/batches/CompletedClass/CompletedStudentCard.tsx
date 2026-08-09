@@ -31,8 +31,7 @@ export default function CompletedStudentCard({ student }: CompletedStudentCardPr
 
   return (
     <View
-      
-      className="bg-[#F9F9F9] rounded-[28px] p-3.5 border border-primary-border flex-row items-center justify-between"
+      className="bg-white rounded-[28px] p-3.5 border border-primary-border flex-row items-center justify-between"
     >
       {/* Left: Avatar + Name & Present/Absent Badge */}
       <View className="flex-row items-center flex-1 ">

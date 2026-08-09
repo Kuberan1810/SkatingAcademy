@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Calendar } from 'iconsax-react-native';
+import { CalendarEdit } from 'iconsax-react-native';
 import FormField from './FormField';
 import { StudentFormData } from '../types';
 
@@ -8,12 +8,14 @@ export interface StepBatchInfoProps {
   formData: StudentFormData;
   updateField: (key: keyof StudentFormData, val: string) => void;
   onOpenBatchPicker: () => void;
+  onOpenJoinDatePicker?: () => void;
 }
 
 export default function StepBatchInfo({
   formData,
   updateField,
   onOpenBatchPicker,
+  onOpenJoinDatePicker,
 }: StepBatchInfoProps) {
   return (
     <View className="gap-4 mb-6">
@@ -31,7 +33,8 @@ export default function StepBatchInfo({
         placeholder="DD / MM / YYYY"
         value={formData.joinDate}
         onChangeText={(text) => updateField('joinDate', text)}
-        icon={Calendar}
+        icon={CalendarEdit}
+        onPress={onOpenJoinDatePicker}
       />
     </View>
   );

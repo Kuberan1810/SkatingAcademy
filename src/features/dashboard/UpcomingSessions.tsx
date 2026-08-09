@@ -67,6 +67,32 @@ export default function UpcomingSessions({
     return session.timeOfDay === activeFilter;
   });
 
+  const handleStatusPress = (session: UpcomingSessionItem) => {
+    if (onStatusPress) {
+      onStatusPress(session);
+    } else {
+      const statusLower = (session.status || '').toLowerCase();
+      if (statusLower === 'completed' || statusLower.includes('complete')) {
+        router.push('/(tabs)/dashboard/completed-class' as any);
+      } else {
+        router.push('/(tabs)/dashboard/start-class' as any);
+      }
+    }
+  };
+
+  const handleSessionPress = (session: UpcomingSessionItem) => {
+    if (onSessionPress) {
+      onSessionPress(session);
+    } else {
+      const statusLower = (session.status || '').toLowerCase();
+      if (statusLower === 'completed' || statusLower.includes('complete')) {
+        router.push('/(tabs)/dashboard/completed-class' as any);
+      } else {
+        router.push('/(tabs)/dashboard/start-class' as any);
+      }
+    }
+  };
+
   return (
     <View style={style} className={`mt-[30px] ${className}`}>
       {/* Header Row: Title & Date + View All Button */}
@@ -103,8 +129,8 @@ export default function UpcomingSessions({
               studentsCount={session.studentsCount}
               status={session.status}
               statusLabel={session.statusLabel}
-              onPressCard={() => onSessionPress?.(session)}
-              onStatusPress={() => onStatusPress?.(session)}
+              onPressCard={() => handleSessionPress(session)}
+              onStatusPress={() => handleStatusPress(session)}
             />
           ))
         ) : (

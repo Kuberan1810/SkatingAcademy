@@ -103,7 +103,25 @@ export default function UpcomingSessionsOverview({
     if (onStatusPress) {
       onStatusPress(session);
     } else {
-      router.push('/(tabs)/batches/start-class' as any);
+      const statusLower = (session.status || '').toLowerCase();
+      if (statusLower === 'completed' || statusLower.includes('complete')) {
+        router.push('/(tabs)/dashboard/completed-class' as any);
+      } else {
+        router.push('/(tabs)/dashboard/start-class' as any);
+      }
+    }
+  };
+
+  const handleCardPress = (session: UpcomingSessionOverviewItem) => {
+    if (onSessionPress) {
+      onSessionPress(session);
+    } else {
+      const statusLower = (session.status || '').toLowerCase();
+      if (statusLower === 'completed' || statusLower.includes('complete')) {
+        router.push('/(tabs)/dashboard/completed-class' as any);
+      } else {
+        router.push('/(tabs)/dashboard/start-class' as any);
+      }
     }
   };
 
@@ -165,7 +183,7 @@ export default function UpcomingSessionsOverview({
               studentsCount={session.studentsCount}
               status={session.status}
               statusLabel={session.statusLabel}
-              onPressCard={() => onSessionPress?.(session)}
+              onPressCard={() => handleCardPress(session)}
               onStatusPress={() => handleStartOrStatus(session)}
             />
           ))}

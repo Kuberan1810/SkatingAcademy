@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleProp, ViewStyle, Linking } from 'react-native';
 import { Card } from 'iconsax-react-native';
+import { router } from 'expo-router';
 import BtnCom from '@/components/ui/BtnCom';
 import FiltersTabs from '@/components/ui/FiltersTabs';
 import PendingFeeCard, { PendingFeeCardProps } from '@/components/ui/PendingFeeCard';
@@ -64,6 +65,14 @@ export default function PendingFee({
 }: PendingFeeProps) {
   const [activeFilter, setActiveFilter] = useState('All');
 
+  const handleViewAll = () => {
+    if (onViewAllPress) {
+      onViewAllPress();
+    } else {
+      router.push('/(tabs)/dashboard/pending-fees' as any);
+    }
+  };
+
   const filteredFees = fees.filter((fee) => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'Due Today') return fee.status?.toLowerCase().includes('today');
@@ -87,6 +96,103 @@ export default function PendingFee({
     }
   };
 
+  const handleCollectItem = (item: PendingFeeItem) => {
+    if (onCollectPress) {
+      onCollectPress(item);
+    } else {
+      router.push('/(tabs)/fees/CollectFee' as any);
+    }
+  };
+
+  const handleFeeItemPress = (item: PendingFeeItem) => {
+    if (onFeeItemPress) {
+      onFeeItemPress(item);
+    } else {
+      const statusUpper = (item.status || '').toUpperCase();
+      const feeStatus = statusUpper.includes('OVERDUE') ? 'OVERDUE' : 'PENDING';
+      const formattedAmount =
+        typeof item.amount === 'number' ? `₹${item.amount.toLocaleString('en-IN')}` : item.amount;
+
+      const studentProfileData = {
+        id: item.id || '1',
+        name: item.studentName,
+        avatar: item.avatarSource,
+        joinedDate: '10 Jul 2026',
+        location: item.batchName || 'Sathya Stadium',
+        attendancePercent: '88%',
+        parentInfo: {
+          parentName: 'Parent of ' + item.studentName.split(' ')[0],
+          phone: item.phone || item.phoneNumber || '+91 96009 27801',
+          emergency: '+91 98765 43211',
+        },
+        personalInfo: {
+          gender: 'Male',
+          dob: '2012-05-14',
+          bloodGroup: 'O+ Positive',
+          address: 'No. 12, Anna Nagar, Chennai, Tamil Nadu - 600040',
+        },
+        feeInfo: {
+          monthlyFee: formattedAmount,
+          pending: formattedAmount,
+          status: feeStatus as 'PENDING' | 'OVERDUE' | 'PAID',
+        },
+        attendanceStats: {
+          present: 22,
+          absent: 2,
+          attendancePercent: '88%',
+          scheduledDaysCount: 24,
+        },
+        attendanceGrid: [
+          { dayName: 'Sun', dayNumber: '19', fullDate: '2026-10-19', status: 'present' },
+          { dayName: 'Mon', dayNumber: '20', fullDate: '2026-10-20', status: 'present' },
+          { dayName: 'Tue', dayNumber: '21', fullDate: '2026-10-21', status: 'present' },
+          { dayName: 'Wed', dayNumber: '22', fullDate: '2026-10-22', status: 'absent' },
+          { dayName: 'Thu', dayNumber: '23', fullDate: '2026-10-23', status: 'present' },
+          { dayName: 'Fri', dayNumber: '24', fullDate: '2026-10-24', status: 'present' },
+          { dayName: 'Sat', dayNumber: '25', fullDate: '2026-10-25', status: 'present' },
+        ],
+        balanceSummary: {
+          lastPaidAmount: '₹1,250',
+          lastPaidDate: '05 Sep 2026',
+          nextPaymentAmount: formattedAmount,
+          nextPaymentDueDate: item.dueDate || '15 Oct 2026',
+          daysLeftText: item.status || 'Due Soon',
+        },
+        currentMonthFee: {
+          monthYear: 'OCTOBER 2026',
+          amount: formattedAmount,
+          status: feeStatus === 'OVERDUE' ? 'overdue' : 'pending',
+          statusSubtext: `Due: ${item.dueDate || '15 Oct 2026'}`,
+          paymentDetails: feeStatus === 'OVERDUE' ? 'Over due' : 'Pending',
+        },
+        transactions: [
+          {
+            id: 'tx1',
+            title: 'September Fee',
+            dateAndMethod: '05 Sep 2026 • UPI',
+            amount: '₹1,250',
+            status: 'PAID',
+          },
+          {
+            id: 'tx2',
+            title: 'August Fee',
+            dateAndMethod: '04 Aug 2026 • Cash',
+            amount: '₹1,250',
+            status: 'PAID',
+          },
+        ],
+      };
+
+      router.push({
+        pathname: '/(tabs)/dashboard/student-profile',
+        params: {
+          id: item.id,
+          studentData: JSON.stringify(studentProfileData),
+        },
+      } as any);
+    }
+  };
+
   const subtitleText = `${amountText} across ${studentsCountText}`;
 
   return (
@@ -102,7 +208,7 @@ export default function PendingFee({
           </Text>
         </View>
 
-        <BtnCom label="View all" onClick={onViewAllPress} />
+        <BtnCom label="View all" onClick={handleViewAll} />
       </View>
 
       {/* Filter Tabs */}
@@ -129,9 +235,9 @@ export default function PendingFee({
               status={item.status}
               statusLabel={item.statusLabel}
               avatarSource={item.avatarSource}
-              onPressCard={() => onFeeItemPress?.(item)}
+              onPressCard={() => handleFeeItemPress(item)}
               onCallPress={() => handleCallItem(item)}
-              onCollectPress={() => onCollectPress?.(item)}
+              onCollectPress={() => handleCollectItem(item)}
             />
           ))
         ) : (

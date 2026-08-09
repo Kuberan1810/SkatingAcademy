@@ -3,7 +3,7 @@ import Header from '@/components/ui/Header';
 import Search from '@/components/ui/Search';
 import { router } from 'expo-router';
 import { Setting2, TickCircle } from 'iconsax-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Text, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import AttendanceSummarySheet from './AttendanceSummarySheet';
@@ -11,6 +11,7 @@ import StartClassSummary from './StartClassSummary';
 import SaveAttendanceButton from './StudentAttendanceButton';
 import { AttendanceStatus, StudentData } from './StudentAttendanceCard';
 import StudentList from './StudentList';
+import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 
 const INITIAL_STUDENTS: StudentData[] = [
   { id: '1', name: 'Rahul Sharma', batchName: 'Morning Batch' },
@@ -29,6 +30,7 @@ export interface StartClassOverviewProps {
   batchName?: string;
   dateText?: string;
   students?: StudentData[];
+  onBackPress?: () => void;
   onSave?: (attendance: Record<string, AttendanceStatus>) => void;
 }
 
@@ -37,8 +39,18 @@ export default function StartClassOverview({
   batchName = 'Morning Batch (6:00 AM - 7:30 AM)',
   dateText = 'Today · Oct 24, 2023',
   students = INITIAL_STUDENTS,
+  onBackPress,
   onSave,
 }: StartClassOverviewProps) {
+  const { hideTabBar, showTabBar } = useTabBarVisibility();
+
+  useEffect(() => {
+    hideTabBar();
+    return () => {
+      showTabBar();
+    };
+  }, [hideTabBar, showTabBar]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -117,6 +129,16 @@ export default function StartClassOverview({
     }, 700);
   };
 
+  const handleBack = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/dashboard/index' as any);
+    }
+  };
+
   return (
     <ScreenWrapper>
       {/* Success Toast Notification */}
@@ -142,7 +164,7 @@ export default function StartClassOverview({
       <Header
         variant="page"
         title={batchTitle}
-        onBackPress={() => router.back()}
+        onBackPress={handleBack}
         rightIcon={Setting2}
       />
 

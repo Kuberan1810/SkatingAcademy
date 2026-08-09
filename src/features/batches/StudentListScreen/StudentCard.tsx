@@ -39,6 +39,12 @@ export interface StudentListItem {
   paidDate?: string;
   attendanceRatio: string;
   attendanceRatioStatus?: 'success' | 'danger';
+  parentName?: string;
+  emergencyContact?: string;
+  gender?: 'Male' | 'Female' | 'Other';
+  dob?: string;
+  bloodGroup?: string;
+  address?: string;
 }
 
 export interface StudentCardProps {

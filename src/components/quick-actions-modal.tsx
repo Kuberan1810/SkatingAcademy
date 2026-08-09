@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { ClipboardText, DocumentText1, NotificationBing, Teacher } from 'iconsax-react-native';
 import { ChevronRight, X } from 'lucide-react-native';
 import React from 'react';
-import { Animated, Dimensions, Modal, PanResponder, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, PanResponder, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface QuickActionsModalProps {
   visible: boolean;
@@ -53,25 +53,23 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
 
   const panResponder = React.useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true, // Catch touches on empty spaces immediately!
-      onStartShouldSetPanResponderCapture: () => false, // Let buttons be clicked
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 2 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+        return Math.abs(gestureState.dy) > 8 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 2 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+        return Math.abs(gestureState.dy) > 15 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dy > 0) {
           slideAnim.setValue(gestureState.dy);
-          // Fade out background slightly as you drag down
           const opacity = Math.max(0, 1 - (gestureState.dy / (height / 2)));
           fadeAnim.setValue(opacity);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > 60 || gestureState.vy > 0.3) {
-          // Animate fully off-screen with the velocity of the swipe
           Animated.parallel([
             Animated.spring(slideAnim, {
               toValue: height,
@@ -90,7 +88,6 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
             onClose();
           });
         } else {
-          // Spring back smoothly
           Animated.parallel([
             Animated.spring(slideAnim, {
               toValue: 0,
@@ -143,82 +140,79 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
     }
   }, [visible]);
 
+  if (!showModal) return null;
+
   return (
-    <Modal
-      visible={showModal}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
-          <TouchableOpacity
-            style={styles.backdropTouch}
-            activeOpacity={1}
-            onPress={onClose}
-          />
-        </Animated.View>
+    <View style={styles.overlayWrapper}>
+      <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
+        <TouchableOpacity
+          style={styles.backdropTouch}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+      </Animated.View>
 
-        <Animated.View
-          {...panResponder.panHandlers}
-          style={[
-            styles.modalContainer,
-            { transform: [{ translateY: slideAnim }] }
-          ]}
-        >
-          <View style={styles.dragArea}>
-            <View style={styles.dragHandle} />
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.modalContainer,
+          { transform: [{ translateY: slideAnim }] }
+        ]}
+      >
+        <View style={styles.dragArea}>
+          <View style={styles.dragHandle} />
+        </View>
+
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Quick Actions</Text>
+            <Text style={styles.subtitle}>What would you like to create?</Text>
           </View>
+          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <X size={18} color="#6B7280" strokeWidth={2.5} />
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.header}>
-            <View>
-              <Text style={styles.title}>Quick Actions</Text>
-              <Text style={styles.subtitle}>What would you like to create?</Text>
-            </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={18} color="#6B7280" strokeWidth={2.5} />
+        <View style={styles.listContainer}>
+          {ACTION_ITEMS.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.actionItem}
+              activeOpacity={0.7}
+              onPress={() => {
+                onClose();
+                if (item.id === 'test') {
+                  router.push('/(tabs)/batches/index' as any);
+                } else if (item.id === 'assignment') {
+                  router.push('/(tabs)/students/index' as any);
+                } else if (item.id === 'announcement') {
+                  router.push('/(tabs)/notifications/index' as any);
+                } else if (item.id === 'resources') {
+                  router.push('/(tabs)/reports/index' as any);
+                }
+              }}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: item.bgColor }]}>
+                <item.icon size={22} color={item.color} variant="Linear" />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={styles.itemTitle}>{item.title}</Text>
+                <Text style={styles.itemDescription}>{item.description}</Text>
+              </View>
+              <ChevronRight size={16} color="#D1D5DB" strokeWidth={2} />
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.listContainer}>
-            {ACTION_ITEMS.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.actionItem}
-                activeOpacity={0.7}
-                onPress={() => {
-                  onClose();
-                  if (item.id === 'test') {
-                    router.push('/(tabs)/batches/index' as any);
-                  } else if (item.id === 'assignment') {
-                    router.push('/(tabs)/students/index' as any);
-                  } else if (item.id === 'announcement') {
-                    router.push('/(tabs)/notifications/index' as any);
-                  } else if (item.id === 'resources') {
-                    router.push('/(tabs)/reports/index' as any);
-                  }
-                }}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: item.bgColor }]}>
-                  <item.icon size={22} color={item.color} variant="Linear" />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-                  <Text style={styles.itemDescription}>{item.description}</Text>
-                </View>
-                <ChevronRight size={16} color="#D1D5DB" strokeWidth={2} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Animated.View>
-      </View>
-    </Modal>
+          ))}
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
+  overlayWrapper: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 99999,
+    elevation: 99999,
     justifyContent: 'flex-end',
   },
   backdrop: {
