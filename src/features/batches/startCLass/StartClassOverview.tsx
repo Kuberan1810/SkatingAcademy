@@ -122,6 +122,8 @@ export default function StartClassOverview({
         setShowToast(false);
         if (onSave) {
           onSave(attendanceMap);
+        } else if (onBackPress) {
+          onBackPress();
         } else {
           router.back();
         }

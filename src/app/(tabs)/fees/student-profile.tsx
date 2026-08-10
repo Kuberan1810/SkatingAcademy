@@ -3,7 +3,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { StudentProfileScreen } from '@/features/studentProfile';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 
-export default function BatchStudentProfileRoute() {
+export default function FeesStudentProfileRoute() {
   const params = useLocalSearchParams<any>();
   const { hideTabBar } = useTabBarVisibility();
 
@@ -14,9 +14,10 @@ export default function BatchStudentProfileRoute() {
   let parsedStudent = null;
   if (params.studentData) {
     try {
-      parsedStudent = typeof params.studentData === 'string'
-        ? JSON.parse(params.studentData)
-        : params.studentData;
+      parsedStudent =
+        typeof params.studentData === 'string'
+          ? JSON.parse(params.studentData)
+          : params.studentData;
     } catch (e) {
       console.log('Error parsing studentData:', e);
     }
@@ -31,7 +32,7 @@ export default function BatchStudentProfileRoute() {
         if (router.canGoBack()) {
           router.back();
         } else {
-          router.replace('/(tabs)/batches' as any);
+          router.replace('/(tabs)/fees' as any);
         }
       }}
     />

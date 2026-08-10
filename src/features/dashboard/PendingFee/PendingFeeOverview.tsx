@@ -209,7 +209,23 @@ export default function PendingFeeOverview({
     if (onCollectPress) {
       onCollectPress(item);
     } else {
-      router.push('/(tabs)/fees/CollectFee' as any);
+      const studentForCollect = {
+        id: item.studentId || item.id,
+        name: item.studentName,
+        studentId: item.studentId || `ID: SA-2024-${(item.id || '1').toString().padStart(4, '0')}`,
+        location: item.batchName || 'Sathya Stadium',
+        dueAmount: typeof item.amount === 'number' ? `₹${item.amount.toLocaleString('en-IN')}` : (item.amount || '₹1,200'),
+        dueLabel: item.status || 'Due Today',
+        avatar: item.avatarSource,
+      };
+
+      router.push({
+        pathname: '/(tabs)/fees/CollectFee' as any,
+        params: {
+          studentData: JSON.stringify(studentForCollect),
+          from: 'pending-fees',
+        },
+      });
     }
   };
 
@@ -297,6 +313,7 @@ export default function PendingFeeOverview({
         params: {
           id: item.studentId || item.id,
           studentData: JSON.stringify(studentProfileData),
+          from: 'pending-fees',
         },
       } as any);
     }

@@ -26,6 +26,8 @@ export interface BatchListProps {
     onEditBatch?: (item: BatchItem) => void;
     onDeleteBatch?: (item: BatchItem) => void;
     onTabChange?: (tab: string) => void;
+    searchQuery?: string;
+    sortBy?: string;
     style?: StyleProp<ViewStyle>;
     className?: string;
 }
@@ -74,6 +76,8 @@ export default function BatchList({
     onEditBatch,
     onDeleteBatch,
     onTabChange,
+    searchQuery = '',
+    sortBy = 'recent',
     style,
     className = '',
 }: BatchListProps) {
@@ -83,13 +87,40 @@ export default function BatchList({
     const [batchToDelete, setBatchToDelete] = useState<BatchItem | null>(null);
     const [isOptionsVisible, setIsOptionsVisible] = useState(false);
 
-    const filteredBatches = batchList.filter((batch) => {
-        if (activeFilter === 'All') return true;
-        if (activeFilter === 'Completed') return batch.status === 'completed' || !!batch.attendance;
-        if (activeFilter === 'Morning') return batch.category === 'Morning' || batch.title.toLowerCase().includes('morning');
-        if (activeFilter === 'Evening') return batch.category === 'Evening' || batch.title.toLowerCase().includes('evening');
-        return true;
-    });
+    const filteredBatches = React.useMemo(() => {
+        let result = batchList.filter((batch) => {
+            const matchesSearch = batch.title.toLowerCase().includes(searchQuery.toLowerCase());
+            if (!matchesSearch) return false;
+
+            if (activeFilter === 'All') return true;
+            if (activeFilter === 'Completed') return batch.status === 'completed' || !!batch.attendance;
+            if (activeFilter === 'Morning') return batch.category === 'Morning' || batch.title.toLowerCase().includes('morning');
+            if (activeFilter === 'Evening') return batch.category === 'Evening' || batch.title.toLowerCase().includes('evening');
+            return true;
+        });
+
+        // Apply sorting
+        switch (sortBy) {
+            case 'name_asc':
+                result.sort((a, b) => a.title.localeCompare(b.title));
+                break;
+            case 'name_desc':
+                result.sort((a, b) => b.title.localeCompare(a.title));
+                break;
+            case 'most_students':
+                result.sort((a, b) => (b.studentsCount || 0) - (a.studentsCount || 0));
+                break;
+            case 'least_students':
+                result.sort((a, b) => (a.studentsCount || 0) - (b.studentsCount || 0));
+                break;
+            case 'recent':
+            default:
+                // Assuming default order is recent, or sort by id as placeholder
+                break;
+        }
+
+        return result;
+    }, [batchList, activeFilter, searchQuery, sortBy]);
 
     const handleTabSelect = (tab: string) => {
         setActiveFilter(tab);

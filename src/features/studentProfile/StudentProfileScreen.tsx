@@ -144,11 +144,29 @@ export default function StudentProfileScreen({
   const { hideTabBar, showTabBar, handleScroll } = useTabBarVisibility();
   const [activeTab, setActiveTab] = useState<StudentProfileTabType>('overview');
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState<StudentProfileData>(student);
+  const [currentStudent, setCurrentStudent] = useState<StudentProfileData>({
+    ...DEFAULT_STUDENT_PROFILE,
+    ...student,
+    parentInfo: { ...DEFAULT_STUDENT_PROFILE.parentInfo, ...(student.parentInfo || {}) },
+    personalInfo: { ...DEFAULT_STUDENT_PROFILE.personalInfo, ...(student.personalInfo || {}) },
+    feeInfo: { ...DEFAULT_STUDENT_PROFILE.feeInfo, ...(student.feeInfo || {}) },
+    attendanceStats: { ...DEFAULT_STUDENT_PROFILE.attendanceStats, ...(student.attendanceStats || {}) },
+    attendanceGrid: student.attendanceGrid || DEFAULT_STUDENT_PROFILE.attendanceGrid,
+    payments: student.payments || DEFAULT_STUDENT_PROFILE.payments,
+  });
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    setCurrentStudent(student);
+    setCurrentStudent({
+      ...DEFAULT_STUDENT_PROFILE,
+      ...student,
+      parentInfo: { ...DEFAULT_STUDENT_PROFILE.parentInfo, ...(student.parentInfo || {}) },
+      personalInfo: { ...DEFAULT_STUDENT_PROFILE.personalInfo, ...(student.personalInfo || {}) },
+      feeInfo: { ...DEFAULT_STUDENT_PROFILE.feeInfo, ...(student.feeInfo || {}) },
+      attendanceStats: { ...DEFAULT_STUDENT_PROFILE.attendanceStats, ...(student.attendanceStats || {}) },
+      attendanceGrid: student.attendanceGrid || DEFAULT_STUDENT_PROFILE.attendanceGrid,
+      payments: student.payments || DEFAULT_STUDENT_PROFILE.payments,
+    });
   }, [
     student.id,
     student.name,
@@ -216,7 +234,7 @@ export default function StudentProfileScreen({
   };
 
   const handleCall = () => {
-    const phoneNumber = currentStudent.parentInfo.phone || '+919876543210';
+    const phoneNumber = currentStudent?.parentInfo?.phone || (currentStudent as any)?.phone || '+919876543210';
     if (onCallPress) {
       onCallPress(phoneNumber);
     } else {
@@ -231,11 +249,22 @@ export default function StudentProfileScreen({
     if (onCollectPress) {
       onCollectPress();
     } else {
-      Alert.alert(
-        'Collect Fee',
-        `Collect payment for ${currentStudent.name} (${currentStudent.currentMonthFee.amount})`,
-        [{ text: 'Cancel' }, { text: 'Collect Now', onPress: () => {} }]
-      );
+      const studentForCollect = {
+        id: currentStudent.id,
+        name: currentStudent.name,
+        studentId: `ID: SA-2024-${(currentStudent.id || '1').toString().padStart(4, '0')}`,
+        location: currentStudent.location || 'Sathya Stadium',
+        dueAmount: currentStudent.currentMonthFee?.amount || currentStudent.feeInfo?.monthlyFee || '₹1,200',
+        dueLabel: 'Due Today',
+        avatar: currentStudent.avatar,
+      };
+
+      router.push({
+        pathname: '/(tabs)/fees/CollectFee' as any,
+        params: {
+          studentData: JSON.stringify(studentForCollect),
+        },
+      });
     }
   };
 

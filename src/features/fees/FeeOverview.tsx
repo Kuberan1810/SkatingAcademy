@@ -89,6 +89,16 @@ const DEFAULT_RECENT_PAYMENTS: RecentPaymentItem[] = [
   },
 ];
 
+import SortBottomSheet, { SortOptionItem } from '@/components/ui/SortBottomSheet';
+
+const SORT_OPTIONS: SortOptionItem[] = [
+  { id: 'recent', label: 'Recently Added' },
+  { id: 'name_asc', label: 'Student Name', subtitle: 'A to Z' },
+  { id: 'name_desc', label: 'Student Name', subtitle: 'Z to A' },
+  { id: 'amount_high', label: 'Amount', subtitle: 'High to Low' },
+  { id: 'amount_low', label: 'Amount', subtitle: 'Low to High' },
+];
+
 export type FeeFilterTab = 'All' | 'Paid' | 'Unpaid' | 'Overdue';
 
 export interface FeeOverviewProps {
@@ -123,11 +133,13 @@ export default function FeeOverview({
   const { handleScroll } = useTabBarVisibility();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<FeeFilterTab>('All');
+  const [sortBy, setSortBy] = useState('recent');
+  const [isSortVisible, setIsSortVisible] = useState(false);
 
   const tabs: FeeFilterTab[] = ['All', 'Paid', 'Unpaid', 'Overdue'];
 
   const filteredStudents = useMemo(() => {
-    let result = students;
+    let result = [...students];
 
     // Filter by tab
     if (activeTab === 'Paid') {
@@ -150,8 +162,29 @@ export default function FeeOverview({
       );
     }
 
+    // Apply sorting
+    const parseAmount = (amountStr: string) => parseInt(amountStr.replace(/[^0-9]/g, ''), 10) || 0;
+
+    switch (sortBy) {
+      case 'name_asc':
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'name_desc':
+        result.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case 'amount_high':
+        result.sort((a, b) => parseAmount(b.amount || '') - parseAmount(a.amount || ''));
+        break;
+      case 'amount_low':
+        result.sort((a, b) => parseAmount(a.amount || '') - parseAmount(b.amount || ''));
+        break;
+      case 'recent':
+      default:
+        break;
+    }
+
     return result;
-  }, [students, activeTab, searchQuery]);
+  }, [students, activeTab, searchQuery, sortBy]);
 
   const handleBack = () => {
     if (onBackPress) {
@@ -180,6 +213,7 @@ export default function FeeOverview({
         onChangeText={setSearchQuery}
         placeholder="Search students, batches..."
         showFilter={true}
+        onFilterPress={() => setIsSortVisible(true)}
       />
 
       {/* Main Scroll Content */}
@@ -303,6 +337,17 @@ export default function FeeOverview({
           ))}
         </View>
       </Animated.ScrollView>
+
+      <SortBottomSheet
+        visible={isSortVisible}
+        options={SORT_OPTIONS}
+        selectedOptionId={sortBy}
+        onSelectOption={(id) => {
+          setSortBy(id);
+          setIsSortVisible(false);
+        }}
+        onClose={() => setIsSortVisible(false)}
+      />
     </ScreenWrapper>
   );
 }

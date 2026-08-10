@@ -34,7 +34,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: BottomTabBarProps & { onAddPress: () => void }) {
-  const { tabBarOffset, isTabBarVisible } = useTabBarVisibility();
+  const { tabBarOffset, isTabBarVisible, showTabBar, hideTabBar } = useTabBarVisibility();
   const [tabLayouts, setTabLayouts] = useState<{ [key: string]: { x: number; y: number; width: number; height: number } }>({});
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -88,7 +88,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
 
     // Only these 4 top-level tab routes are valid
     const isAllowedTab = [
-      '(tabs)/dashboard/index',
+      '(tabs)/dashboard',
       '(tabs)/batches',
       '(tabs)/students',
       '(tabs)/fees',
@@ -98,14 +98,14 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
       return false;
     }
 
-    // Check if there is any nested stack navigation state (e.g. inside (tabs)/batches or (tabs)/fees or (tabs)/students)
+    // Check if there is any nested stack navigation state (e.g. inside (tabs)/dashboard, (tabs)/batches, (tabs)/fees, (tabs)/students)
     if (activeRoute?.state) {
       const nestedIndex = activeRoute.state.index ?? 0;
       const nestedRoutes = activeRoute.state.routes || [];
       const currentNestedRoute = nestedRoutes[nestedIndex];
       const nestedRouteName = (currentNestedRoute?.name || '').toLowerCase();
 
-      // If pushed into a subscreen (e.g. StudentListScreen, completed-class, start-class, add, CollectFee, recent-payments, [id])
+      // If pushed into a subscreen (e.g. pending-fees, upcoming-sessions, StudentListScreen, completed-class, start-class, add, CollectFee, recent-payments, [id])
       if (nestedIndex > 0 || (nestedRouteName && nestedRouteName !== 'index')) {
         return false;
       }
@@ -114,13 +114,22 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     return true;
   })();
 
-  if (!isStrictMainTabRoot || !isTabBarVisible) {
+  // Ensure tab bar visibility state and position are perfectly synchronized with the route
+  React.useEffect(() => {
+    if (isStrictMainTabRoot) {
+      showTabBar();
+    } else {
+      hideTabBar();
+    }
+  }, [isStrictMainTabRoot, activeRouteKey, activeRoute?.state?.index]);
+
+  if (!isStrictMainTabRoot) {
     return null;
   }
 
   // Filter routes matching our app layout
   const visibleRoutes = state.routes.filter((r: any) =>
-    ['(tabs)/dashboard/index', '(tabs)/batches', '(tabs)/students', '(tabs)/fees'].includes(r.name)
+    ['(tabs)/dashboard', '(tabs)/batches', '(tabs)/students', '(tabs)/fees'].includes(r.name)
   );
 
   const tabContent = visibleRoutes.map((route: any) => {
@@ -322,6 +331,7 @@ export default function AppTabs() {
     <TabBarVisibilityProvider>
       <Tabs
         initialRouteName="(auth)/login"
+        backBehavior="history"
         tabBar={props => <CustomInstructorTabBar {...props as any} onAddPress={() => setQuickActionsVisible(true)} />}
         screenOptions={{
           headerShown: false,
@@ -329,18 +339,13 @@ export default function AppTabs() {
         }}
       >
         {/* Visible Tabs */}
-        <Tabs.Screen name="(tabs)/dashboard/index" options={{ title: 'Home' }} />
+        <Tabs.Screen name="(tabs)/dashboard" options={{ title: 'Home' }} />
         <Tabs.Screen name="(tabs)/batches" options={{ title: 'Batches' }} />
         <Tabs.Screen name="(tabs)/students" options={{ title: 'Student' }} />
         <Tabs.Screen name="(tabs)/fees" options={{ title: 'Fees' }} />
 
         {/* Hidden Tabs / Screens */}
         <Tabs.Screen name="index" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/dashboard/upcoming-sessions" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/dashboard/pending-fees" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/dashboard/start-class" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/dashboard/completed-class" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/dashboard/student-profile" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/notifications/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/reports/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/settings/index" options={{ href: null }} />

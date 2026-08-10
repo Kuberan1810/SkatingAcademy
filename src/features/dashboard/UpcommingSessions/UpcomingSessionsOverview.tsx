@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, BackHandler } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Setting2 } from 'iconsax-react-native';
 import { router } from 'expo-router';
@@ -72,6 +72,22 @@ export default function UpcomingSessionsOverview({
     };
   }, [hideTabBar, showTabBar]);
 
+  // Handle hardware back press on Android
+  useEffect(() => {
+    const backAction = () => {
+      if (onBackPress) {
+        onBackPress();
+      } else if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/dashboard' as any);
+      }
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [onBackPress]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
@@ -104,11 +120,15 @@ export default function UpcomingSessionsOverview({
       onStatusPress(session);
     } else {
       const statusLower = (session.status || '').toLowerCase();
-      if (statusLower === 'completed' || statusLower.includes('complete')) {
-        router.push('/(tabs)/dashboard/completed-class' as any);
-      } else {
-        router.push('/(tabs)/dashboard/start-class' as any);
-      }
+      const targetPath =
+        statusLower === 'completed' || statusLower.includes('complete')
+          ? '/(tabs)/dashboard/completed-class'
+          : '/(tabs)/dashboard/start-class';
+
+      router.push({
+        pathname: targetPath as any,
+        params: { from: 'upcoming-sessions', title: session.title },
+      });
     }
   };
 
@@ -117,11 +137,15 @@ export default function UpcomingSessionsOverview({
       onSessionPress(session);
     } else {
       const statusLower = (session.status || '').toLowerCase();
-      if (statusLower === 'completed' || statusLower.includes('complete')) {
-        router.push('/(tabs)/dashboard/completed-class' as any);
-      } else {
-        router.push('/(tabs)/dashboard/start-class' as any);
-      }
+      const targetPath =
+        statusLower === 'completed' || statusLower.includes('complete')
+          ? '/(tabs)/dashboard/completed-class'
+          : '/(tabs)/dashboard/start-class';
+
+      router.push({
+        pathname: targetPath as any,
+        params: { from: 'upcoming-sessions', title: session.title },
+      });
     }
   };
 

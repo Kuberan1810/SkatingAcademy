@@ -27,12 +27,18 @@ export default function DashboardStudentProfileRoute() {
     <StudentProfileScreen
       studentId={params.id}
       student={parsedStudent || undefined}
-      shouldRestoreTabBarOnUnmount={false}
+      shouldRestoreTabBarOnUnmount={true}
       onBackPress={() => {
         if (router.canGoBack()) {
           router.back();
-        } else {
+        } else if (params.from === 'pending-fees') {
           router.replace('/(tabs)/dashboard/pending-fees' as any);
+        } else if (params.from === 'upcoming-sessions') {
+          router.replace('/(tabs)/dashboard/upcoming-sessions' as any);
+        } else if (params.from === 'fees') {
+          router.replace('/(tabs)/fees' as any);
+        } else {
+          router.replace('/(tabs)/dashboard' as any);
         }
       }}
     />

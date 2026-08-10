@@ -32,10 +32,17 @@ const DEFAULT_STUDENT: CollectFeeStudentInfo = {
 };
 
 export default function CollectFeeStudentCard({
-  student = DEFAULT_STUDENT,
+  student: providedStudent,
   style,
   className = '',
 }: CollectFeeStudentCardProps) {
+  const student = useMemo(() => {
+    return {
+      ...DEFAULT_STUDENT,
+      ...providedStudent,
+    };
+  }, [providedStudent]);
+
   const resolvedAvatar = useMemo(() => {
     if (!student.avatar) return DEFAULT_AVATAR;
     if (typeof student.avatar === 'string') {

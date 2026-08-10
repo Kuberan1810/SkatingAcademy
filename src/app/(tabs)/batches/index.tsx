@@ -5,14 +5,25 @@ import Header from '@/components/ui/Header';
 import Search from '@/components/ui/Search';
 import Overview from '@/features/dashboard/Overview';
 import BatchList from '@/features/batches/BatchList';
+import SortBottomSheet, { SortOptionItem } from '@/components/ui/SortBottomSheet';
 import { router } from 'expo-router';
 import { Add, Setting2 } from 'iconsax-react-native';
 
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 
+const SORT_OPTIONS: SortOptionItem[] = [
+  { id: 'recent', label: 'Recently Added' },
+  { id: 'name_asc', label: 'Batch Name', subtitle: 'A to Z' },
+  { id: 'name_desc', label: 'Batch Name', subtitle: 'Z to A' },
+  { id: 'most_students', label: 'Most Students' },
+  { id: 'least_students', label: 'Least Students' },
+];
+
 export default function BatchesScreen() {
   const { handleScroll } = useTabBarVisibility();
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
+  const [isSortVisible, setIsSortVisible] = useState(false);
 
   return (
     <ScreenWrapper>
@@ -28,6 +39,7 @@ export default function BatchesScreen() {
         onChangeText={setSearchQuery}
         placeholder="Search students, batches..."
         showFilter={true}
+        onFilterPress={() => setIsSortVisible(true)}
       />
 
       <Animated.ScrollView
@@ -49,15 +61,26 @@ export default function BatchesScreen() {
       >
         <Overview />
         <BatchList
+          searchQuery={searchQuery}
+          sortBy={sortBy}
           onBatchPress={(item) => {
-            if (item.status === 'completed' || !!item.attendance) {
-              router.push('/(tabs)/batches/completed-class' as any);
-            } else {
-              router.push('/(tabs)/batches/StudentListScreen' as any);
-            }
+            router.push({
+              pathname: '/(tabs)/batches/StudentListScreen',
+              params: { title: item.title, from: 'batches' },
+            } as any);
           }}
-          onStartPress={(item) => router.push('/(tabs)/batches/start-class')}
-          onAttendancePress={(item) => router.push('/(tabs)/batches/completed-class' as any)}
+          onStartPress={(item) => {
+            router.push({
+              pathname: '/(tabs)/batches/start-class',
+              params: { title: item.title, from: 'batches' },
+            } as any);
+          }}
+          onAttendancePress={(item) => {
+            router.push({
+              pathname: '/(tabs)/batches/completed-class',
+              params: { title: item.title, from: 'batches' },
+            } as any);
+          }}
           onEditBatch={(item) => {
             router.push({
               pathname: '/(tabs)/batches/add',
@@ -73,6 +96,17 @@ export default function BatchesScreen() {
           onMorePress={(item) => console.log('More options for:', item.title)}
         />
       </Animated.ScrollView>
+
+      <SortBottomSheet
+        visible={isSortVisible}
+        options={SORT_OPTIONS}
+        selectedOptionId={sortBy}
+        onSelectOption={(id) => {
+          setSortBy(id);
+          setIsSortVisible(false);
+        }}
+        onClose={() => setIsSortVisible(false)}
+      />
     </ScreenWrapper>
   );
 }

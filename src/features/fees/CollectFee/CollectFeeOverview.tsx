@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, ScrollView, Alert, KeyboardAvoidingView, Platform, Keyboard, Text } from 'react-native';
+import { View, ScrollView, Alert, KeyboardAvoidingView, Platform, Keyboard, Text, BackHandler } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { Setting2, TickCircle } from 'iconsax-react-native';
 import { router } from 'expo-router';
@@ -35,10 +35,17 @@ const DEFAULT_STUDENT: CollectFeeStudentInfo = {
 };
 
 export default function CollectFeeOverview({
-  student = DEFAULT_STUDENT,
+  student: providedStudent,
   onBackPress,
   onConfirmSuccess,
 }: CollectFeeOverviewProps) {
+  const student = useMemo(() => {
+    return {
+      ...DEFAULT_STUDENT,
+      ...providedStudent,
+    };
+  }, [providedStudent]);
+
   // Hide tab bar while on Collect Fee screen
   const { hideTabBar, showTabBar } = useTabBarVisibility();
 
@@ -78,6 +85,16 @@ export default function CollectFeeOverview({
       hideSub.remove();
     };
   }, []);
+
+  // Handle hardware back press on Android
+  useEffect(() => {
+    const backAction = () => {
+      handleBack();
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [onBackPress]);
 
   const handleNotesFocus = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
