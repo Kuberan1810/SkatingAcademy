@@ -7,6 +7,7 @@ import PendingFee from '@/features/dashboard/PendingFee';
 import React, { useState } from 'react';
 import Animated, { SlideInRight, Easing } from 'react-native-reanimated';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
+import { router } from 'expo-router';
 
 export default function DashboardScreen() {
   const { handleScroll } = useTabBarVisibility();
@@ -19,10 +20,14 @@ export default function DashboardScreen() {
     >
       <ScreenWrapper>
         <Header
+          variant="profile"
           userName="Rajesh Kannan"
           greeting="Welcome"
           avatarSource={require('@/assets/images/home/dp.svg')}
-          onNotificationPress={() => console.log('Notification pressed')}
+          onAvatarPress={() => router.push('/(tabs)/settings')}
+          onNotificationPress={() => router.push('/(tabs)/notifications')}
+          hasUnreadNotifications={true}
+          notificationCount={2}
         />
 
         <Search

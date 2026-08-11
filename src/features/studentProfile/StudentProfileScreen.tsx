@@ -7,12 +7,7 @@ import { Trash } from 'iconsax-react-native';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
-
-import {
-  StudentProfileData,
-  StudentProfileScreenProps,
-  StudentProfileTabType,
-} from './types';
+import {StudentProfileData,StudentProfileScreenProps,StudentProfileTabType} from './types';
 import StudentSummaryCard from './components/StudentSummaryCard';
 import StudentActionButtons from './components/StudentActionButtons';
 import StudentSegmentedTabs from './components/StudentSegmentedTabs';
@@ -152,7 +147,9 @@ export default function StudentProfileScreen({
     feeInfo: { ...DEFAULT_STUDENT_PROFILE.feeInfo, ...(student.feeInfo || {}) },
     attendanceStats: { ...DEFAULT_STUDENT_PROFILE.attendanceStats, ...(student.attendanceStats || {}) },
     attendanceGrid: student.attendanceGrid || DEFAULT_STUDENT_PROFILE.attendanceGrid,
-    payments: student.payments || DEFAULT_STUDENT_PROFILE.payments,
+    balanceSummary: { ...DEFAULT_STUDENT_PROFILE.balanceSummary, ...(student.balanceSummary || {}) },
+    currentMonthFee: { ...DEFAULT_STUDENT_PROFILE.currentMonthFee, ...(student.currentMonthFee || {}) },
+    transactions: student.transactions || DEFAULT_STUDENT_PROFILE.transactions,
   });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -165,7 +162,9 @@ export default function StudentProfileScreen({
       feeInfo: { ...DEFAULT_STUDENT_PROFILE.feeInfo, ...(student.feeInfo || {}) },
       attendanceStats: { ...DEFAULT_STUDENT_PROFILE.attendanceStats, ...(student.attendanceStats || {}) },
       attendanceGrid: student.attendanceGrid || DEFAULT_STUDENT_PROFILE.attendanceGrid,
-      payments: student.payments || DEFAULT_STUDENT_PROFILE.payments,
+      balanceSummary: { ...DEFAULT_STUDENT_PROFILE.balanceSummary, ...(student.balanceSummary || {}) },
+      currentMonthFee: { ...DEFAULT_STUDENT_PROFILE.currentMonthFee, ...(student.currentMonthFee || {}) },
+      transactions: student.transactions || DEFAULT_STUDENT_PROFILE.transactions,
     });
   }, [
     student.id,

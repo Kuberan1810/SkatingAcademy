@@ -32,6 +32,7 @@ export interface HeaderProps {
     onRightPress?: () => void;
     onNotificationPress?: () => void;
     hasUnreadNotifications?: boolean;
+    notificationCount?: number;
 
     style?: StyleProp<ViewStyle>;
     className?: string;
@@ -97,6 +98,7 @@ export default function Header({
     onNotificationPress,
     onAvatarPress,
     hasUnreadNotifications = false,
+    notificationCount,
     style,
     className = '',
 }: HeaderProps) {
@@ -170,6 +172,7 @@ export default function Header({
             {/* Left section: Avatar & Greetings */}
             <View className="flex-row items-center flex-1 mr-3">
                 <TouchableOpacity
+              
                     activeOpacity={0.8}
                     onPress={onAvatarPress}
                     disabled={!onAvatarPress}
@@ -198,9 +201,15 @@ export default function Header({
             {/* Right section: Notification or Custom Right Icon */}
             <FigmaIconButton onPress={onNotificationPress || onRightPress}>
                 {renderHeaderIcon(rightIcon || NotificationBing)}
-                {hasUnreadNotifications && (
-                    <View className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger z-10" />
-                )}
+                {notificationCount !== undefined && notificationCount > 0 ? (
+                    <View className="absolute -top-2 -right-2 min-w-[18px] h-[18px] rounded-full bg-[#EF4444] items-center justify-center px-1 z-10 border-2 border-white">
+                        <Text className="text-white text-[10px] font-urbanist-bold">
+                            {notificationCount > 99 ? '99+' : notificationCount}
+                        </Text>
+                    </View>
+                ) : hasUnreadNotifications ? (
+                    <View className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-[#EF4444] z-10 border-2 border-white" />
+                ) : null}
             </FigmaIconButton>
         </View>
     );

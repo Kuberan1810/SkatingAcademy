@@ -1,7 +1,7 @@
 import React from 'react';
-import { ViewStyle } from 'react-native';
+import { View, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ScreenWrapperProps {
   children: React.ReactNode;
@@ -10,6 +10,8 @@ interface ScreenWrapperProps {
 }
 
 export default function ScreenWrapper({ children, style, className }: ScreenWrapperProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <LinearGradient
       colors={['#EDFBFF', '#FFFFFF']}
@@ -17,13 +19,12 @@ export default function ScreenWrapper({ children, style, className }: ScreenWrap
       end={{ x: 0, y: 0.5 }}
       style={{ flex: 1 }}
     >
-      <SafeAreaView 
+      <View 
         className={`flex-1 ${className || ''}`}
-        style={style}
-        edges={['top', 'left', 'right']}
+        style={[style, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}
       >
         {children}
-      </SafeAreaView>
+      </View>
     </LinearGradient>
   );
 }
