@@ -5,6 +5,7 @@ import CreateBatchScreen from '@/features/creation/BatchCreation/CreateBatchScre
 export default function CreateBatchRoute() {
   const params = useLocalSearchParams<{
     mode?: 'create' | 'edit';
+    batchId?: string;
     batchName?: string;
     level?: string;
     location?: string;
@@ -21,19 +22,20 @@ export default function CreateBatchRoute() {
 
   return (
     <CreateBatchScreen
+      batchId={params.batchId}
       mode={isEdit ? 'edit' : 'create'}
       headerTitle={isEdit ? 'Edit Batch' : 'Create Batch'}
       initialValues={{
-        batchName: params.batchName || (isEdit ? 'Morning Batch' : ''),
-        level: params.level || 'Basic',
-        location: params.location || 'Sathya Stadium',
+        batchName: params.batchName || '',
+        level: params.level || '',
+        location: params.location || '',
         description: params.description || '',
         classType: params.classType || 'Weekend',
         trainingDays: params.trainingDays || 'Sat, Sun',
         startTime: params.startTime || '06:00 AM',
         endTime: params.endTime || '07:30 AM',
-        monthlyFee: params.monthlyFee || '₹1,250',
-        yearlyFee: params.yearlyFee || '₹1,250',
+        monthlyFee: params.monthlyFee || '',
+        yearlyFee: params.yearlyFee || '',
       }}
       onBackPress={() => {
         if (router.canGoBack()) {
@@ -42,9 +44,6 @@ export default function CreateBatchRoute() {
       }}
       onSubmit={(data) => {
         console.log(isEdit ? 'Updated batch:' : 'Created batch:', data);
-        if (router.canGoBack()) {
-          router.back();
-        }
       }}
     />
   );

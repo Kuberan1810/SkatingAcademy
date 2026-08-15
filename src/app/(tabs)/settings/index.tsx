@@ -1,20 +1,22 @@
 import Header from '@/components/ui/Header';
 import SettingsScreenCard, { MenuItemData, UserProfileData } from '@/features/settings/SettingsScreenCard';
 import { router, useRouter } from 'expo-router';
-import { InfoCircle, Logout, MessageQuestion, NotificationBing, Setting2, User, SecurityUser } from 'iconsax-react-native';
+import { InfoCircle, Logout, MessageQuestion, NotificationBing, Setting2, User } from 'iconsax-react-native';
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenWrapper from '@/components/screen-wrapper';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function SettingsScreen() {
     const routerHook = useRouter();
     const insets = useSafeAreaInsets();
+    const { user: authUser, logoutAsync, isLoggingOut } = useAuth();
 
     const user: UserProfileData = {
-        name: 'Rajesh Kannan',
-        email: 'rajesh.kannan@skatingacademy.com',
-        image: '',
+        name: authUser?.name || 'Admin User',
+        email: authUser?.email || 'admin@skatingacademy.com',
+        image: authUser?.avatar || '',
     };
 
     const menuItems: MenuItemData[] = [
@@ -31,7 +33,6 @@ export default function SettingsScreen() {
             badgeCount: 2,
             onPress: () => router.push('/(tabs)/notifications'),
         },
-       
         {
             id: 3,
             label: 'App Settings',
@@ -58,8 +59,13 @@ export default function SettingsScreen() {
         },
     ];
 
-    const handleLogoutConfirm = () => {
-        router.replace('/(auth)/login' as any);
+    const handleLogoutConfirm = async () => {
+        try {
+            await logoutAsync();
+        } catch {
+            // Fallback redirect if network offline
+            router.replace('/(auth)/login' as any);
+        }
     };
 
     return (
@@ -85,7 +91,7 @@ export default function SettingsScreen() {
                     user={user}
                     menuItems={menuItems}
                     onLogoutConfirm={handleLogoutConfirm}
-
+                    isLoggingOut={isLoggingOut}
                 />
             </ScrollView>
         </ScreenWrapper>

@@ -14,6 +14,16 @@ export default function StepParentPayment({
   updateField,
   onFocusBottomField,
 }: StepParentPaymentProps) {
+  const handleFeeChange = (val: string) => {
+    const numeric = val.replace(/[^0-9]/g, '');
+    if (!numeric) {
+      updateField('monthlyFee', '');
+      return;
+    }
+    const formatted = `₹${parseInt(numeric, 10).toLocaleString('en-IN')}`;
+    updateField('monthlyFee', formatted);
+  };
+
   return (
     <View className="gap-4 mb-6">
       <FormField
@@ -25,7 +35,7 @@ export default function StepParentPayment({
 
       <FormField
         label="Phone Number"
-        placeholder="+91 "
+        placeholder="+91 9876543210"
         value={formData.phoneNumber}
         onChangeText={(text) => updateField('phoneNumber', text)}
         keyboardType="phone-pad"
@@ -33,7 +43,7 @@ export default function StepParentPayment({
 
       <FormField
         label="Emergency Contact"
-        placeholder="+91 "
+        placeholder="+91 9876543210"
         value={formData.emergencyContact}
         onChangeText={(text) => updateField('emergencyContact', text)}
         keyboardType="phone-pad"
@@ -44,7 +54,7 @@ export default function StepParentPayment({
         label="Monthly Fee"
         placeholder="₹1,250"
         value={formData.monthlyFee}
-        onChangeText={(text) => updateField('monthlyFee', text)}
+        onChangeText={handleFeeChange}
         keyboardType="numeric"
         onFocus={onFocusBottomField}
       />

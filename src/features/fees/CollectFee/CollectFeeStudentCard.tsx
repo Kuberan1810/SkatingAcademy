@@ -1,17 +1,15 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, StyleProp, ViewStyle, ImageSourcePropType } from 'react-native';
-import { Image } from 'expo-image';
 import { CalendarRemove } from 'iconsax-react-native';
 import styles from '@/styles/styles';
-
-const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
+import StudentAvatar from '@/components/ui/StudentAvatar';
 
 export interface CollectFeeStudentInfo {
-  id?: string;
-  name: string;
-  studentId: string;
-  location: string;
-  dueAmount: string;
+  id?: string | number;
+  name?: string;
+  studentId?: string;
+  location?: string;
+  dueAmount?: string;
   dueLabel?: string;
   avatar?: ImageSourcePropType | string;
 }
@@ -22,34 +20,17 @@ export interface CollectFeeStudentCardProps {
   className?: string;
 }
 
-const DEFAULT_STUDENT: CollectFeeStudentInfo = {
-  id: '1',
-  name: 'Sharma',
-  studentId: 'ID: SA-2024-0892',
-  location: 'Sathya Stadium',
-  dueAmount: '₹1,200',
-  dueLabel: 'Due Today',
-};
-
 export default function CollectFeeStudentCard({
-  student: providedStudent,
+  student,
   style,
   className = '',
 }: CollectFeeStudentCardProps) {
-  const student = useMemo(() => {
-    return {
-      ...DEFAULT_STUDENT,
-      ...providedStudent,
-    };
-  }, [providedStudent]);
-
-  const resolvedAvatar = useMemo(() => {
-    if (!student.avatar) return DEFAULT_AVATAR;
-    if (typeof student.avatar === 'string') {
-      return { uri: student.avatar };
-    }
-    return student.avatar;
-  }, [student.avatar]);
+  const name = student?.name || 'Student';
+  const rawId = student?.studentId || (student?.id ? `ID: SA-2024-${String(student.id).padStart(4, '0')}` : '');
+  const studentId = String(rawId);
+  const location = student?.location || 'Batch';
+  const dueAmount = student?.dueAmount || '₹0';
+  const dueLabel = student?.dueLabel || 'Due Amount';
 
   return (
     <View
@@ -59,32 +40,33 @@ export default function CollectFeeStudentCard({
       {/* Top Row: Avatar + Student Info + Location Pill */}
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center flex-1 mr-2">
-          <Image
-            source={resolvedAvatar}
-            style={{ width: 40, height: 40, borderRadius: 22 }}
-            contentFit="cover"
-            transition={200}
+          <StudentAvatar
+            name={name}
+            avatarUri={student?.avatar}
+            size={40}
           />
           <View className="ml-3 flex-1">
             <Text
               numberOfLines={1}
               className="text-[18px] font-urbanist-bold text-primary tracking-tight"
             >
-              {student.name}
+              {name}
             </Text>
-            <Text
-              numberOfLines={1}
-              className="text-[14px] font-urbanist-medium text-secondary mt-0.5"
-            >
-              {student.studentId}
-            </Text>
+            {!!studentId && (
+              <Text
+                numberOfLines={1}
+                className="text-[14px] font-urbanist-medium text-secondary mt-0.5"
+              >
+                {studentId}
+              </Text>
+            )}
           </View>
         </View>
 
         {/* Location Pill */}
         <View className="px-3.5 py-1.5 rounded-full bg-[#F0F0F0] border border-primary-border">
           <Text className="text-[14px] font-urbanist-medium text-secondary">
-            {student.location}
+            {location}
           </Text>
         </View>
       </View>
@@ -107,7 +89,7 @@ export default function CollectFeeStudentCard({
             style={{ color: '#E70C0C' }}
             className="text-[13px] font-urbanist-semibold tracking-tight"
           >
-            {student.dueLabel || 'Due Today'}: {student.dueAmount}
+            {dueLabel}: {dueAmount}
           </Text>
         </View>
       </View>

@@ -89,6 +89,7 @@ export interface StudentProfileData {
 export interface StudentProfileScreenProps {
   student?: StudentProfileData;
   studentId?: string;
+  initialTab?: StudentProfileTabType;
   shouldRestoreTabBarOnUnmount?: boolean;
   onBackPress?: () => void;
   onDeletePress?: () => void;

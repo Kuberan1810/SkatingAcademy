@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, StyleProp, ViewStyle, ActivityIndicator } from 'react-native';
 import { Layer } from 'iconsax-react-native';
 import { router } from 'expo-router';
 import FiltersTabs from '@/components/ui/FiltersTabs';
 import BatchCard, { BatchCardProps } from '@/components/ui/BatchCard';
 import BatchOptionsBottomSheet from '@/components/ui/BatchOptionsBottomSheet';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
+import Toast from '@/components/ui/Toast';
 import styles from '@/styles/styles';
+import { ApiBatchItem } from '@/types/batch';
+import { BatchCardSkeleton } from '@/components/ui/Skeleton';
+import { useDeleteBatch } from '@/hooks/use-batches';
+import { useIncrementalList } from '@/hooks/use-incremental-list';
 
 export interface BatchItem extends BatchCardProps {
     id: string;
@@ -15,7 +20,9 @@ export interface BatchItem extends BatchCardProps {
 
 export interface BatchListProps {
     title?: string;
-    batches?: BatchItem[];
+    batches?: (BatchItem | ApiBatchItem)[];
+    isLoading?: boolean;
+    loadingBatchId?: string | number | null;
     tabs?: string[];
     emptyText?: string;
     onBatchPress?: (item: BatchItem) => void;
@@ -32,40 +39,26 @@ export interface BatchListProps {
     className?: string;
 }
 
-const DEFAULT_BATCHES: BatchItem[] = [
-    {
-        id: '1',
-        title: 'Morning Batch 2',
-        date: '10 Jul 2026',
-        time: '9:00 - 10:00 am',
-        studentsCount: 24,
-        status: 'completed',
-        category: 'Morning',
-    },
-    {
-        id: '2',
-        title: 'Evening Batch',
-        date: '10 Jul 2026',
-        time: '9:00 - 10:00 am',
-        studentsCount: 24,
-        status: 'upcoming',
-        category: 'Evening',
-    },
-    {
-        id: '3',
-        title: 'Morning Batch',
-        date: '10 Jul 2026',
-        attendance: '20/24',
-        time: '9:00 - 10:00 am',
-        studentsCount: 24,
-        status: 'upcoming',
-        category: 'Morning',
-    },
-];
+const mapToBatchItem = (b: BatchItem | ApiBatchItem): BatchItem => {
+    const raw = b as any;
+    return {
+        id: String(raw.id),
+        title: raw.title || raw.batch_name || 'Batch',
+        date: raw.date || '',
+        time: raw.time || '',
+        studentsCount: raw.students_count ?? raw.studentsCount ?? 0,
+        status: raw.status || 'upcoming',
+        category: raw.category || 'Morning',
+        attendance: raw.attendance ?? undefined,
+        actionLabel: raw.actionLabel,
+    };
+};
 
 export default function BatchList({
     title = 'Batches',
-    batches = DEFAULT_BATCHES,
+    batches = [],
+    isLoading = false,
+    loadingBatchId,
     tabs = ['All', 'Today', 'Morning', 'Evening', 'Completed'],
     emptyText = 'No batches found',
     onBatchPress,
@@ -81,14 +74,30 @@ export default function BatchList({
     style,
     className = '',
 }: BatchListProps) {
-    const [batchList, setBatchList] = useState<BatchItem[]>(batches);
+    const deleteBatchMutation = useDeleteBatch();
+
+    const normalizedBatches = React.useMemo(() => {
+        return batches.map(mapToBatchItem);
+    }, [batches]);
+
     const [activeFilter, setActiveFilter] = useState('All');
     const [selectedBatch, setSelectedBatch] = useState<BatchItem | null>(null);
     const [batchToDelete, setBatchToDelete] = useState<BatchItem | null>(null);
     const [isOptionsVisible, setIsOptionsVisible] = useState(false);
 
+    // Toast State
+    const [toast, setToast] = useState<{
+        visible: boolean;
+        message: string;
+        type: 'success' | 'delete' | 'error';
+    }>({
+        visible: false,
+        message: '',
+        type: 'delete',
+    });
+
     const filteredBatches = React.useMemo(() => {
-        let result = batchList.filter((batch) => {
+        let result = normalizedBatches.filter((batch) => {
             const matchesSearch = batch.title.toLowerCase().includes(searchQuery.toLowerCase());
             if (!matchesSearch) return false;
 
@@ -108,19 +117,27 @@ export default function BatchList({
                 result.sort((a, b) => b.title.localeCompare(a.title));
                 break;
             case 'most_students':
-                result.sort((a, b) => (b.studentsCount || 0) - (a.studentsCount || 0));
+                result.sort((a, b) => (parseInt(String(b.studentsCount || '0'), 10) || 0) - (parseInt(String(a.studentsCount || '0'), 10) || 0));
                 break;
             case 'least_students':
-                result.sort((a, b) => (a.studentsCount || 0) - (b.studentsCount || 0));
+                result.sort((a, b) => (parseInt(String(a.studentsCount || '0'), 10) || 0) - (parseInt(String(b.studentsCount || '0'), 10) || 0));
                 break;
             case 'recent':
             default:
-                // Assuming default order is recent, or sort by id as placeholder
                 break;
         }
 
         return result;
-    }, [batchList, activeFilter, searchQuery, sortBy]);
+    }, [normalizedBatches, activeFilter, searchQuery, sortBy]);
+
+    const {
+        displayedItems: displayedBatches,
+        hasMore: hasMoreBatches,
+    } = useIncrementalList({
+        items: filteredBatches,
+        pageSize: 10,
+        isLoading,
+    });
 
     const handleTabSelect = (tab: string) => {
         setActiveFilter(tab);
@@ -135,6 +152,14 @@ export default function BatchList({
 
     return (
         <View style={style} className={`mt-[30px] ${className}`}>
+            {/* Toast Banner */}
+            <Toast
+                visible={toast.visible}
+                message={toast.message}
+                type={toast.type}
+                onDismiss={() => setToast((prev) => ({ ...prev, visible: false }))}
+            />
+
             {/* Section Header */}
             {!!title && (
                 <View className="flex-row items-center justify-between mb-5">
@@ -155,44 +180,61 @@ export default function BatchList({
 
             {/* Batch Cards List */}
             <View className="gap-5">
-                {filteredBatches.length > 0 ? (
-                    filteredBatches.map((item) => (
-                        <BatchCard
-                            key={item.id}
-                            title={item.title}
-                            time={item.time}
-                            studentsCount={item.studentsCount}
-                            date={item.date}
-                            attendance={item.attendance}
-                            status={item.status}
-                            actionLabel={item.actionLabel}
-                            onPressCard={() => {
-                                if (onBatchPress) {
-                                    onBatchPress(item);
-                                } else if (item.status === 'completed' || item.attendance) {
-                                    router.push('/(tabs)/batches/completed-class' as any);
-                                } else {
-                                    router.push('/(tabs)/batches/StudentListScreen' as any);
-                                }
-                            }}
-                            onActionPress={() => {
-                                if (item.status === 'completed' || item.attendance) {
-                                    if (onAttendancePress) {
-                                        onAttendancePress(item);
-                                    } else {
+                {isLoading && filteredBatches.length === 0 ? (
+                    <View>
+                        <BatchCardSkeleton />
+                        <BatchCardSkeleton />
+                        <BatchCardSkeleton />
+                    </View>
+                ) : filteredBatches.length > 0 ? (
+                    <>
+                        {displayedBatches.map((item) => (
+                            <BatchCard
+                                key={item.id}
+                                title={item.title}
+                                time={item.time}
+                                studentsCount={item.studentsCount}
+                                date={item.date}
+                                attendance={item.attendance}
+                                status={item.status}
+                                actionLabel={item.actionLabel}
+                                loading={String(item.id) === String(loadingBatchId)}
+                                onPressCard={() => {
+                                    if (onBatchPress) {
+                                        onBatchPress(item);
+                                    } else if (item.status === 'completed' || item.attendance) {
                                         router.push('/(tabs)/batches/completed-class' as any);
-                                    }
-                                } else {
-                                    if (onStartPress) {
-                                        onStartPress(item);
                                     } else {
-                                        router.push('/(tabs)/batches/start-class' as any);
+                                        router.push('/(tabs)/batches/StudentListScreen' as any);
                                     }
-                                }
-                            }}
-                            onMorePress={() => handleOpenOptions(item)}
-                        />
-                    ))
+                                }}
+                                onActionPress={() => {
+                                    if (item.status === 'completed' || item.attendance) {
+                                        if (onAttendancePress) {
+                                            onAttendancePress(item);
+                                        } else {
+                                            router.push('/(tabs)/batches/completed-class' as any);
+                                        }
+                                    } else {
+                                        if (onStartPress) {
+                                            onStartPress(item);
+                                        } else {
+                                            router.push('/(tabs)/batches/start-class' as any);
+                                        }
+                                    }
+                                }}
+                                onMorePress={() => handleOpenOptions(item)}
+                            />
+                        ))}
+                        {hasMoreBatches && (
+                            <View className="py-4 flex-row items-center justify-center gap-2">
+                                <ActivityIndicator size="small" color="#8A8A8E" />
+                                <Text className="text-[13px] font-urbanist-medium text-secondary">
+                                    Loading more batches...
+                                </Text>
+                            </View>
+                        )}
+                    </>
                 ) : (
                     <View style={styles.BoxStyle} className="py-8 items-center justify-center">
                         <View style={styles.IconStyle} className="mb-2 p-2.5">
@@ -231,12 +273,25 @@ export default function BatchList({
                 itemName={batchToDelete?.title}
                 message={`Are you sure you want to remove ${batchToDelete?.title}? All enrolled students in this batch will be affected. This action cannot be undone.`}
                 confirmText="Yes, Delete"
+                isLoading={deleteBatchMutation.isPending}
                 onClose={() => setBatchToDelete(null)}
                 onConfirm={() => {
                     if (batchToDelete) {
-                        setBatchList((prev) => prev.filter((b) => b.id !== batchToDelete.id));
-                        onDeleteBatch?.(batchToDelete);
-                        setBatchToDelete(null);
+                        const targetTitle = batchToDelete.title;
+                        deleteBatchMutation.mutate(batchToDelete.id, {
+                            onSuccess: () => {
+                                setToast({
+                                    visible: true,
+                                    message: `${targetTitle} deleted successfully!`,
+                                    type: 'delete',
+                                });
+                                onDeleteBatch?.(batchToDelete);
+                                setBatchToDelete(null);
+                            },
+                            onError: () => {
+                                setBatchToDelete(null);
+                            },
+                        });
                     }
                 }}
             />

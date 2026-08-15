@@ -308,9 +308,9 @@ export default function SuccessStudentModal({
               onPress={onAddAnother}
             />
 
-            {/* View Batch Button */}
+            {/* View Student Button */}
             <PrimaryBtn
-              label="View Batch"
+              label="View Student"
               bgColor="#4186F7"
               textColor="#fff"
               className="flex-1 h-[48px]"

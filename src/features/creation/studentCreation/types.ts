@@ -1,4 +1,5 @@
 export interface StudentFormData {
+  id?: string | number;
   // Step 1: Basic Info
   avatarUri?: string | null;
   fullName: string;
@@ -19,6 +20,7 @@ export interface StudentFormData {
 }
 
 export interface AddStudentScreenProps {
+  studentId?: number | string;
   initialValues?: Partial<StudentFormData>;
   mode?: 'create' | 'edit';
   headerTitle?: string;

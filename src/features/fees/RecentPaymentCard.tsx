@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,7 @@ import {
   ViewStyle,
   ImageSourcePropType,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { ProfileTick } from 'iconsax-react-native';
-import styles, { COLORS } from '@/styles/styles';
-
-const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
+import StudentAvatar from '@/components/ui/StudentAvatar';
 
 export interface RecentPaymentItem {
   id: string;
@@ -36,14 +32,6 @@ export default function RecentPaymentCard({
   style,
   className = '',
 }: RecentPaymentCardProps) {
-  const resolvedAvatar = useMemo(() => {
-    if (!item.avatar) return DEFAULT_AVATAR;
-    if (typeof item.avatar === 'string') {
-      return { uri: item.avatar };
-    }
-    return item.avatar;
-  }, [item.avatar]);
-
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -52,19 +40,16 @@ export default function RecentPaymentCard({
       className={`p-2.5 border border-primary-border rounded-[28px] bg-white flex-row items-center justify-between ${className}`}
     >
       {/* Left: Avatar & Payment Details */}
-      <View className="flex-row items-center flex-1 ">
-        <View className=" rounded-full overflow-hidden ">
-          <Image
-            source={resolvedAvatar}
-            style={{ width: 40, height: 40, borderRadius: 20 }}
-            contentFit="cover"
-            transition={200}
-          />
-        </View>
-        <View className="ml-2 flex-1 justify-center">
+      <View className="flex-row items-center flex-1">
+        <StudentAvatar
+          name={item.name}
+          avatarUri={item.avatar}
+          size={40}
+        />
+        <View className="ml-3 flex-1 justify-center">
           <Text
             numberOfLines={1}
-            className="text-[16px] font-urbanist-semibold text-primary tracking-tight"
+            className="text-[16px] font-urbanist-semibold text-primary tracking-tight capitalize"
           >
             {item.name}
           </Text>
@@ -77,13 +62,10 @@ export default function RecentPaymentCard({
         </View>
       </View>
 
-      {/* Right: Amount (+₹2,400) or Pill Badge */}
-
-     
-        <Text className="text-[16px] font-urbanist-medium text-[#02763D] tracking-tight">
-          +{item.amount}
-        </Text>
-  
+      {/* Right: Amount (+₹2,400) */}
+      <Text className="text-[16px] font-urbanist-medium text-[#02763D] tracking-tight">
+        +{item.amount}
+      </Text>
     </TouchableOpacity>
   );
 }

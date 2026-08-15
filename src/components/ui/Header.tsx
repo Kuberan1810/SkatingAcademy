@@ -30,6 +30,8 @@ export interface HeaderProps {
     // Right Action Icon Props (pass component like rightIcon={Setting2} or element like rightIcon={<Setting2 size={24} />})
     rightIcon?: IconPropType;
     onRightPress?: () => void;
+    secondaryRightIcon?: IconPropType;
+    onSecondaryRightPress?: () => void;
     onNotificationPress?: () => void;
     hasUnreadNotifications?: boolean;
     notificationCount?: number;
@@ -95,6 +97,8 @@ export default function Header({
     onBackPress,
     rightIcon,
     onRightPress,
+    secondaryRightIcon,
+    onSecondaryRightPress,
     onNotificationPress,
     onAvatarPress,
     hasUnreadNotifications = false,
@@ -129,7 +133,7 @@ export default function Header({
         }
     };
 
-    // Render Page Header (Back / Left Icon + Title + Optional Right Icon)
+    // Render Page Header (Back / Left Icon + Title + Optional Right Icons)
     if (isPageHeader) {
         return (
             <View style={style} className={`flex-row items-center justify-between px-5 py-3.5 w-full ${className}`}>
@@ -154,14 +158,21 @@ export default function Header({
                     )}
                 </View>
 
-                {/* Right: Custom Right Icon */}
-                {rightIcon ? (
-                    <FigmaIconButton onPress={onRightPress || onNotificationPress}>
-                        {renderHeaderIcon(rightIcon)}
-                    </FigmaIconButton>
-                ) : (
-                    <View className="w-[44px] h-[44px]" />
-                )}
+                {/* Right: Custom Right Icon(s) */}
+                <View className="flex-row items-center gap-2">
+                    {secondaryRightIcon && (
+                        <FigmaIconButton onPress={onSecondaryRightPress}>
+                            {renderHeaderIcon(secondaryRightIcon)}
+                        </FigmaIconButton>
+                    )}
+                    {rightIcon ? (
+                        <FigmaIconButton onPress={onRightPress || onNotificationPress}>
+                            {renderHeaderIcon(rightIcon)}
+                        </FigmaIconButton>
+                    ) : (
+                        !secondaryRightIcon && <View className="w-[44px] h-[44px]" />
+                    )}
+                </View>
             </View>
         );
     }
@@ -172,7 +183,6 @@ export default function Header({
             {/* Left section: Avatar & Greetings */}
             <View className="flex-row items-center flex-1 mr-3">
                 <TouchableOpacity
-              
                     activeOpacity={0.8}
                     onPress={onAvatarPress}
                     disabled={!onAvatarPress}

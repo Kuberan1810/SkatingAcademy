@@ -1,19 +1,15 @@
 import styles, { COLORS } from '@/styles/styles';
-import { Image } from 'expo-image';
 import {
   Calendar,
-  Call,
   Stickynote,
   Location,
-  User,
   CallCalling,
-  Profile2User,
   ProfileTick,
   CalendarTick,
   CalendarRemove,
 } from 'iconsax-react-native';
 import { EllipsisVertical } from 'lucide-react-native';
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   ImageSourcePropType,
   Linking,
@@ -23,8 +19,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-
-const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
+import StudentAvatar from '@/components/ui/StudentAvatar';
 
 export interface StudentListItem {
   id: string;
@@ -56,7 +51,7 @@ export interface StudentCardProps {
   className?: string;
 }
 
-export default function StudentCard({
+function StudentCard({
   student,
   onPress,
   onMorePress,
@@ -64,14 +59,6 @@ export default function StudentCard({
   style,
   className = '',
 }: StudentCardProps) {
-  const resolvedAvatar = useMemo(() => {
-    if (!student.avatar) return DEFAULT_AVATAR;
-    if (typeof student.avatar === 'string') {
-      return { uri: student.avatar };
-    }
-    return student.avatar;
-  }, [student.avatar]);
-
   const handleCall = () => {
     if (onCallPress) {
       onCallPress(student.phone);
@@ -117,14 +104,13 @@ export default function StudentCard({
         </TouchableOpacity>
       </View>
 
-      {/* Middle Row: Avatar, Student Info & Phone Call Button */}
+      {/* Middle Row: Avatar / Initials Badge, Student Info & Phone Call Button */}
       <View className="flex-row items-center justify-between mb-5">
         <View className="flex-row items-center flex-1">
-          <Image
-            source={resolvedAvatar}
-            style={{ width: 40, height: 40, borderRadius: 26 }}
-            contentFit="cover"
-            transition={200}
+          <StudentAvatar
+            name={student.name}
+            avatarUri={student.avatar}
+            size={40}
           />
           <View className="ml-2.5 flex-1">
             <Text
@@ -133,7 +119,7 @@ export default function StudentCard({
             >
               {student.name}
             </Text>
-            <View className="flex-row items-center flex-nowrap gap-x-2  mt-1">
+            <View className="flex-row items-center flex-nowrap gap-x-2 mt-1">
               <View className="flex-row items-center gap-1">
                 <View style={styles.IconStyle}>
                   <Location size={11} color="#626262" variant="Linear" />
@@ -256,3 +242,5 @@ export default function StudentCard({
     </TouchableOpacity>
   );
 }
+
+export default React.memo(StudentCard);

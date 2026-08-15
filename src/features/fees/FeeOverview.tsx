@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
 import Animated from 'react-native-reanimated';
-import {  Layer, ExportSquare } from 'iconsax-react-native';
+import { Layer, ExportSquare, User } from 'iconsax-react-native';
 import { router } from 'expo-router';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
@@ -13,83 +13,9 @@ import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 import FeeStudentCard, { FeeStudentListItem } from './FeeStudentCard';
 import RecentPaymentCard, { RecentPaymentItem } from './RecentPaymentCard';
 import BtnCom from '@/components/ui/BtnCom';
-
-const DEFAULT_FEE_STUDENTS: FeeStudentListItem[] = [
-  {
-    id: '1',
-    name: 'Rahul Sharma',
-    location: 'Sathya Stadium',
-    phone: '+91 9876543210',
-    paymentStatus: 'paid',
-    amount: '₹1,200',
-    paidDate: '12 Aug 2026',
-  },
-  {
-    id: '2',
-    name: 'Ananya Verma',
-    location: 'Sathya Stadium',
-    phone: '+91 9876543211',
-    paymentStatus: 'paid',
-    amount: '₹2,400',
-    paidDate: '10 Aug 2026',
-  },
-  {
-    id: '3',
-    name: 'Vikram Singh',
-    location: 'Sathya Stadium',
-    phone: '+91 9876543212',
-    paymentStatus: 'due_today',
-    amount: '₹1,200',
-  },
-  {
-    id: '4',
-    name: 'Priya Patel',
-    location: 'Sathya Stadium',
-    phone: '+91 9876543213',
-    paymentStatus: 'overdue',
-    amount: '₹1,500',
-  },
-];
-
-const DEFAULT_RECENT_PAYMENTS: RecentPaymentItem[] = [
-  {
-    id: 'p1',
-    name: 'Rahul Sharma',
-    timeAgoOrDate: '2 hr ago',
-    paymentMethod: 'UPI',
-    amount: '₹2,400',
-  },
-  {
-    id: 'p2',
-    name: 'Ananya Verma',
-    timeAgoOrDate: '4 hr ago',
-    paymentMethod: 'UPI',
-    amount: '₹1,200',
-  },
-  {
-    id: 'p3',
-    name: 'Kavya Nair',
-    timeAgoOrDate: '1 day ago',
-    paymentMethod: 'CASH',
-    amount: '₹3,600',
-  },
-  {
-    id: 'p4',
-    name: 'Rohan Mehta',
-    timeAgoOrDate: '19/7/2026',
-    paymentMethod: 'UPI',
-    amount: '₹1,200',
-  },
-  {
-    id: 'p5',
-    name: 'Priya Patel',
-    timeAgoOrDate: '18/7/2026',
-    paymentMethod: 'CASH',
-    amount: '₹2,400',
-  },
-];
-
 import SortBottomSheet, { SortOptionItem } from '@/components/ui/SortBottomSheet';
+import { FeeCardSkeleton } from '@/components/ui/Skeleton';
+import { useIncrementalList } from '@/hooks/use-incremental-list';
 
 const SORT_OPTIONS: SortOptionItem[] = [
   { id: 'recent', label: 'Recently Added' },
@@ -110,24 +36,32 @@ export interface FeeOverviewProps {
   totalCollectionTarget?: string;
   pendingFeesAmount?: string;
   thisMonthAmount?: string;
+  isLoading?: boolean;
+  isRefetching?: boolean;
+  onRefresh?: () => void;
   onBackPress?: () => void;
   onStudentPress?: (student: FeeStudentListItem) => void;
   onCollectFeePress?: (student: FeeStudentListItem) => void;
+  onViewAllStudents?: () => void;
   onViewAllRecentPayments?: () => void;
 }
 
 export default function FeeOverview({
-  screenTitle = 'Sathya Stadium Fee',
-  students = DEFAULT_FEE_STUDENTS,
-  recentPayments = DEFAULT_RECENT_PAYMENTS,
-  totalStudentsCount = '26',
-  todayCollectionCount = '12',
-  totalCollectionTarget = '26',
-  pendingFeesAmount = '₹2,400',
-  thisMonthAmount = '₹18,000',
+  screenTitle = 'Fee Overview',
+  students = [],
+  recentPayments = [],
+  totalStudentsCount = '0',
+  todayCollectionCount = '0',
+  totalCollectionTarget = '0',
+  pendingFeesAmount = '₹0',
+  thisMonthAmount = '₹0',
+  isLoading = false,
+  isRefetching = false,
+  onRefresh,
   onBackPress,
   onStudentPress,
   onCollectFeePress,
+  onViewAllStudents,
   onViewAllRecentPayments,
 }: FeeOverviewProps) {
   const { handleScroll } = useTabBarVisibility();
@@ -186,6 +120,20 @@ export default function FeeOverview({
     return result;
   }, [students, activeTab, searchQuery, sortBy]);
 
+  const {
+    displayedItems: displayedStudents,
+    hasMore: hasMoreStudents,
+    onScroll: onIncrementalScroll,
+  } = useIncrementalList({
+    items: filteredStudents,
+    pageSize: 5,
+    isLoading,
+  });
+
+  const overviewDisplayedStudents = useMemo(() => {
+    return displayedStudents.slice(0, 5);
+  }, [displayedStudents]);
+
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
@@ -203,7 +151,7 @@ export default function FeeOverview({
         onBackPress={handleBack}
         rightIcon={ExportSquare}
         onRightPress={() => {
-          console.log('Settings pressed');
+          console.log('Export pressed');
         }}
       />
 
@@ -218,10 +166,22 @@ export default function FeeOverview({
 
       {/* Main Scroll Content */}
       <Animated.ScrollView
-        onScroll={handleScroll}
+        onScroll={(e) => {
+          handleScroll(e);
+          onIncrementalScroll(e);
+        }}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         decelerationRate={0.998}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={onRefresh}
+              tintColor="#4186F7"
+            />
+          ) : undefined
+        }
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingTop: 12,
@@ -238,7 +198,7 @@ export default function FeeOverview({
               variant="purple"
               title="Total Students"
               value={totalStudentsCount}
-              subtitle="2 New This Month"
+              subtitle="Enrolled Students"
             />
           </View>
           <View className="w-1/2 px-1.5 mb-3">
@@ -247,7 +207,7 @@ export default function FeeOverview({
               title="Today's Collection"
               value={todayCollectionCount}
               valueSuffix={totalCollectionTarget ? `/ ${totalCollectionTarget}` : undefined}
-              subtitle="14 Student Remaining"
+              subtitle="Collection Target"
             />
           </View>
           <View className="w-1/2 px-1.5">
@@ -255,7 +215,7 @@ export default function FeeOverview({
               variant="blue"
               title="Pending Fees"
               value={pendingFeesAmount}
-              subtitle="2 Students Due"
+              subtitle="Total Overdue / Pending"
             />
           </View>
           <View className="w-1/2 px-1.5">
@@ -269,9 +229,21 @@ export default function FeeOverview({
         </View>
 
         {/* Student List Section */}
-        <Text className="text-[22px] font-urbanist-bold text-primary mb-3 tracking-tight">
-          Student List
-        </Text>
+        <View className="flex-row items-center justify-between mb-5">
+          <Text className="text-[22px] font-urbanist-bold text-primary tracking-tight">
+            Student List
+          </Text>
+          <BtnCom
+            label="View All"
+            onClick={() => {
+              if (onViewAllStudents) {
+                onViewAllStudents();
+              } else {
+                router.push('/(tabs)/fees/student-list' as any);
+              }
+            }}
+          />
+        </View>
 
         {/* Filter Tabs using reusable FiltersTabs component */}
         <View className="mb-4">
@@ -284,18 +256,60 @@ export default function FeeOverview({
 
         {/* Student Cards List */}
         <View className="gap-3 mb-8">
-          {filteredStudents.length > 0 ? (
-            filteredStudents.map((student) => (
-              <FeeStudentCard
-                key={student.id}
-                student={student}
-                onPress={onStudentPress}
-                onCollectPress={
-                  onCollectFeePress ||
-                  (() => router.push('/(tabs)/fees/CollectFee' as any))
-                }
-              />
-            ))
+          {isLoading ? (
+            <View>
+              <FeeCardSkeleton />
+              <FeeCardSkeleton />
+              <FeeCardSkeleton />
+            </View>
+          ) : filteredStudents.length > 0 ? (
+            <>
+              {overviewDisplayedStudents.map((student) => (
+                <FeeStudentCard
+                  key={student.id}
+                  student={student}
+                  onPress={onStudentPress}
+                  onCollectPress={
+                    onCollectFeePress
+                      ? () => onCollectFeePress(student)
+                      : () => {
+                          const studentForCollect = {
+                            id: student.id,
+                            name: student.name,
+                            studentId: `ID: SA-2024-${(student.id || '1').toString().padStart(4, '0')}`,
+                            location: student.location || 'Batch',
+                            dueAmount: student.amount || '₹1,250',
+                            dueLabel: 'Due Amount',
+                          };
+                          router.push({
+                            pathname: '/(tabs)/fees/CollectFee' as any,
+                            params: { studentData: JSON.stringify(studentForCollect) },
+                          });
+                        }
+                  }
+                />
+              ))}
+              {filteredStudents.length > 5 && (
+                <View className="py-2 flex-row items-center justify-end">
+                  <TouchableOpacity
+                    style={[styles.BlackInnerShadowStyle]}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      if (onViewAllStudents) {
+                        onViewAllStudents();
+                      } else {
+                        router.push('/(tabs)/fees/student-list' as any);
+                      }
+                    }}
+                    className="bg-[#FFFFFF] border border-primary-border rounded-[18px] px-4 py-2.5 justify-center items-center"
+                  >
+                    <Text className="text-[12px] font-urbanist-medium text-secondary tracking-tight">
+                      View All ({filteredStudents.length} Students)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
           ) : (
             <View style={styles.BoxStyle} className="py-8 items-center justify-center">
               <View style={styles.IconStyle} className="mb-2 p-2.5">
@@ -327,14 +341,27 @@ export default function FeeOverview({
               }
             }}
           />
-
         </View>
 
         {/* Recent Payment List */}
         <View className="gap-3">
-          {recentPayments.map((item) => (
-            <RecentPaymentCard key={item.id} item={item} />
-          ))}
+          {recentPayments.length > 0 ? (
+            recentPayments.map((item) => (
+              <RecentPaymentCard key={item.id} item={item} />
+            ))
+          ) : (
+            <View style={styles.BoxStyle} className="py-8 items-center justify-center my-4">
+              <View style={styles.IconStyle} className="mb-2 p-2.5">
+                <User size={24} color="#8A8A8E" variant="Linear" />
+              </View>
+              <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
+                No Recent Fee Payments
+              </Text>
+              <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
+                No payments have been received yet.
+              </Text>
+            </View>
+          )}
         </View>
       </Animated.ScrollView>
 

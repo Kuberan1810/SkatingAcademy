@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleProp, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Trash } from 'iconsax-react-native';
+import { Trash, User } from 'iconsax-react-native';
 import { router } from 'expo-router';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
@@ -10,6 +10,8 @@ import FiltersTabs from '@/components/ui/FiltersTabs';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 import CreateBatchScreen from '@/features/creation/BatchCreation/CreateBatchScreen';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
+import { CompletedClassHeaderSkeleton, CompletedStudentCardSkeleton } from '@/components/ui/Skeleton';
+import styles from '@/styles/styles';
 
 import CompletedStudentCard, { CompletedStudentItem } from './CompletedStudentCard';
 import CompletedClassStatCards from './CompletedClassStatCards';
@@ -24,59 +26,27 @@ export interface CompletedClassOverviewProps {
   presentCount?: number;
   absentCount?: number;
   students?: CompletedStudentItem[];
+  isLoading?: boolean;
   onBackPress?: () => void;
+  onStudentPress?: (student: CompletedStudentItem) => void;
   onDeleteBatchPress?: () => void;
   onEditBatchPress?: () => void;
   style?: StyleProp<ViewStyle>;
   className?: string;
 }
 
-const DEFAULT_STUDENTS: CompletedStudentItem[] = [
-  {
-    id: '1',
-    name: 'Rahul Sharma',
-    attendancePercent: '92% Attendance',
-    status: 'present',
-    attendanceRatio: '20/24',
-  },
-  {
-    id: '2',
-    name: 'Rahul Sharma',
-    attendancePercent: '92% Attendance',
-    status: 'present',
-  },
-  {
-    id: '3',
-    name: 'Rahul Sharma',
-    attendancePercent: '90% Attendance',
-    status: 'absent',
-  },
-  {
-    id: '4',
-    name: 'Rahul Sharma',
-    attendancePercent: '92% Attendance',
-    status: 'absent',
-    attendanceRatio: '20/24',
-  },
-  {
-    id: '5',
-    name: 'Rahul Sharma',
-    attendancePercent: '95% Attendance',
-    status: 'present',
-    attendanceRatio: '22/24',
-  },
-];
-
 export default function CompletedClassOverview({
-  batchTitle = 'Sathya Stadium Students',
-  batchName = 'Morning Batch (6:00 AM - 7:30 AM)',
-  dateText = 'Today · Oct 24, 2023',
-  subtitle = 'Track daily attendance for Sathya Stadium',
-  totalCount = 90,
-  presentCount = 86,
-  absentCount = 4,
-  students = DEFAULT_STUDENTS,
+  batchTitle = 'Class Students',
+  batchName = 'Completed Class Session',
+  dateText = 'Today',
+  subtitle = 'Track daily attendance history',
+  totalCount = 0,
+  presentCount = 0,
+  absentCount = 0,
+  students = [],
+  isLoading = false,
   onBackPress,
+  onStudentPress,
   onDeleteBatchPress,
   onEditBatchPress,
 }: CompletedClassOverviewProps) {
@@ -89,6 +59,14 @@ export default function CompletedClassOverview({
   const [isEditBatchVisible, setIsEditBatchVisible] = useState(false);
 
   useEffect(() => {
+    setCurrentBatchName(batchName);
+  }, [batchName]);
+
+  useEffect(() => {
+    setCurrentBatchTitle(batchTitle);
+  }, [batchTitle]);
+
+  useEffect(() => {
     hideTabBar();
     return () => {
       showTabBar();
@@ -98,8 +76,10 @@ export default function CompletedClassOverview({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
+  const activeStudents = students || [];
+
   const filteredStudents = useMemo(() => {
-    return students.filter((s) => {
+    return activeStudents.filter((s) => {
       const matchesSearch =
         !searchQuery.trim() ||
         s.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -111,7 +91,7 @@ export default function CompletedClassOverview({
 
       return matchesSearch && matchesFilter;
     });
-  }, [students, searchQuery, activeFilter]);
+  }, [activeStudents, searchQuery, activeFilter]);
 
   const handleBack = () => {
     if (onBackPress) {
@@ -120,6 +100,17 @@ export default function CompletedClassOverview({
       router.back();
     } else {
       router.replace('/(tabs)/batches' as any);
+    }
+  };
+
+  const handleStudentClick = (student: CompletedStudentItem) => {
+    if (onStudentPress) {
+      onStudentPress(student);
+    } else {
+      router.push({
+        pathname: '/(tabs)/batches/student-profile',
+        params: { id: student.id, name: student.name, initialTab: 'overview', from: 'completed-class' },
+      } as any);
     }
   };
 
@@ -161,6 +152,7 @@ export default function CompletedClassOverview({
         rightIcon={<Trash size={20} color="#EF4444" variant="Linear" />}
         onRightPress={() => setIsDeleteModalVisible(true)}
       />
+
       {/* Search Input Bar */}
       <View className="mb-4 pt-1">
         <Search
@@ -170,6 +162,7 @@ export default function CompletedClassOverview({
           showFilter={false}
         />
       </View>
+
       <Animated.ScrollView
         className="flex-1 px-5"
         contentContainerStyle={{
@@ -184,19 +177,26 @@ export default function CompletedClassOverview({
         decelerationRate="normal"
         scrollEventThrottle={16}
       >
-        {/* Date Pill, Batch Name & Subtitle Section */}
-        <CompletedClassHeaderSection
-          dateText={dateText}
-          batchName={currentBatchName}
-          subtitle={subtitle}
-        />
+        {/* Skeleton Header Section while data is loading */}
+        {isLoading ? (
+          <CompletedClassHeaderSkeleton />
+        ) : (
+          <>
+            {/* Date Pill, Batch Name & Subtitle Section */}
+            <CompletedClassHeaderSection
+              dateText={dateText}
+              batchName={currentBatchName}
+              subtitle={subtitle}
+            />
 
-        {/* Stat Cards: Total, Present, Absent */}
-        <CompletedClassStatCards
-          totalCount={totalCount}
-          presentCount={presentCount}
-          absentCount={absentCount}
-        />
+            {/* Stat Cards: Total, Present, Absent */}
+            <CompletedClassStatCards
+              totalCount={totalCount}
+              presentCount={presentCount}
+              absentCount={absentCount}
+            />
+          </>
+        )}
 
         {/* Student List Section Title & Filter Tabs */}
         <Text className="text-[20px] font-urbanist-bold text-primary tracking-tight mb-5">
@@ -212,11 +212,36 @@ export default function CompletedClassOverview({
         />
 
         {/* Student List Cards */}
-        <View className="gap-4">
-          {filteredStudents.map((s) => (
-            <CompletedStudentCard key={s.id} student={s} />
-          ))}
-        </View>
+        {isLoading ? (
+          <View>
+            <CompletedStudentCardSkeleton />
+            <CompletedStudentCardSkeleton />
+            <CompletedStudentCardSkeleton />
+            <CompletedStudentCardSkeleton />
+          </View>
+        ) : filteredStudents.length > 0 ? (
+          <View className="gap-4">
+            {filteredStudents.map((s) => (
+              <CompletedStudentCard
+                key={s.id}
+                student={s}
+                onPress={() => handleStudentClick(s)}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.BoxStyle} className="py-8 items-center justify-center my-4">
+            <View style={styles.IconStyle} className="mb-2 p-2.5">
+              <User size={24} color="#8A8A8E" variant="Linear" />
+            </View>
+            <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
+              No Students Found
+            </Text>
+            <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
+              No attendance records match the selected filter.
+            </Text>
+          </View>
+        )}
       </Animated.ScrollView>
 
       {/* Delete Batch Confirmation Sheet */}
@@ -229,7 +254,6 @@ export default function CompletedClassOverview({
         onClose={() => setIsDeleteModalVisible(false)}
         onConfirm={() => {
           setIsDeleteModalVisible(false);
-          console.log('batch deleted:', currentBatchName);
           if (onDeleteBatchPress) {
             onDeleteBatchPress();
           } else {

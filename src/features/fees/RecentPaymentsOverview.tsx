@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, RefreshControl, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Setting2, Layer, ExportSquare } from 'iconsax-react-native';
+import { Layer, ExportSquare } from 'iconsax-react-native';
 import { router } from 'expo-router';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
@@ -10,6 +10,8 @@ import FiltersTabs from '@/components/ui/FiltersTabs';
 import styles from '@/styles/styles';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 import RecentPaymentCard, { RecentPaymentItem } from './RecentPaymentCard';
+import { FeeCardSkeleton } from '@/components/ui/Skeleton';
+import { useIncrementalList } from '@/hooks/use-incremental-list';
 
 const EXTENDED_RECENT_PAYMENTS: RecentPaymentItem[] = [
   {
@@ -47,27 +49,6 @@ const EXTENDED_RECENT_PAYMENTS: RecentPaymentItem[] = [
     paymentMethod: 'CASH',
     amount: '₹2,400',
   },
-  {
-    id: 'p6',
-    name: 'Vikram Singh',
-    timeAgoOrDate: '17/7/2026',
-    paymentMethod: 'UPI',
-    amount: '₹1,200',
-  },
-  {
-    id: 'p7',
-    name: 'Aarav Patel',
-    timeAgoOrDate: '15/7/2026',
-    paymentMethod: 'CASH',
-    amount: '₹2,400',
-  },
-  {
-    id: 'p8',
-    name: 'Meera Nair',
-    timeAgoOrDate: '14/7/2026',
-    paymentMethod: 'UPI',
-    amount: '₹1,200',
-  },
 ];
 
 export type PaymentFilterTab = 'All' | 'UPI' | 'CASH';
@@ -75,6 +56,9 @@ export type PaymentFilterTab = 'All' | 'UPI' | 'CASH';
 export interface RecentPaymentsOverviewProps {
   screenTitle?: string;
   payments?: RecentPaymentItem[];
+  isLoading?: boolean;
+  isRefetching?: boolean;
+  onRefresh?: () => void;
   onBackPress?: () => void;
   onPaymentPress?: (item: RecentPaymentItem) => void;
 }
@@ -82,6 +66,9 @@ export interface RecentPaymentsOverviewProps {
 export default function RecentPaymentsOverview({
   screenTitle = 'Recent Payments',
   payments = EXTENDED_RECENT_PAYMENTS,
+  isLoading = false,
+  isRefetching = false,
+  onRefresh,
   onBackPress,
   onPaymentPress,
 }: RecentPaymentsOverviewProps) {
@@ -115,6 +102,16 @@ export default function RecentPaymentsOverview({
     return result;
   }, [payments, activeTab, searchQuery]);
 
+  const {
+    displayedItems: displayedPayments,
+    hasMore: hasMorePayments,
+    onScroll: onIncrementalScroll,
+  } = useIncrementalList({
+    items: filteredPayments,
+    pageSize: 10,
+    isLoading,
+  });
+
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
@@ -132,12 +129,7 @@ export default function RecentPaymentsOverview({
         variant="page"
         title={screenTitle}
         onBackPress={handleBack}
-        // rightIcon={Setting2}
-        // onRightPress={() => {
-        //   console.log('Settings pressed in Recent Payments');
-        // }}
         rightIcon={ExportSquare}
-
       />
 
       {/* Search Input */}
@@ -150,10 +142,23 @@ export default function RecentPaymentsOverview({
 
       {/* Scrollable List Content */}
       <Animated.ScrollView
-        onScroll={handleScroll}
+        onScroll={(e) => {
+          handleScroll(e);
+          onIncrementalScroll(e);
+        }}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         decelerationRate={0.998}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={onRefresh}
+              tintColor="#4186F7"
+              colors={['#4186F7']}
+            />
+          ) : undefined
+        }
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingTop: 12,
@@ -171,14 +176,30 @@ export default function RecentPaymentsOverview({
 
         {/* Payments Card List */}
         <View className="gap-3">
-          {filteredPayments.length > 0 ? (
-            filteredPayments.map((item) => (
-              <RecentPaymentCard
-                key={item.id}
-                item={item}
-                onPress={onPaymentPress}
-              />
-            ))
+          {isLoading && filteredPayments.length === 0 ? (
+            <View>
+              <FeeCardSkeleton />
+              <FeeCardSkeleton />
+              <FeeCardSkeleton />
+            </View>
+          ) : filteredPayments.length > 0 ? (
+            <>
+              {displayedPayments.map((item) => (
+                <RecentPaymentCard
+                  key={item.id}
+                  item={item}
+                  onPress={onPaymentPress}
+                />
+              ))}
+              {hasMorePayments && (
+                <View className="py-4 flex-row items-center justify-center gap-2">
+                  <ActivityIndicator size="small" color="#8A8A8E" />
+                  <Text className="text-[13px] font-urbanist-medium text-secondary">
+                    Loading more payments...
+                  </Text>
+                </View>
+              )}
+            </>
           ) : (
             <View style={styles.BoxStyle} className="py-8 items-center justify-center">
               <View style={styles.IconStyle} className="mb-2 p-2.5">

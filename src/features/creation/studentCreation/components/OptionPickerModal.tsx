@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  Modal,
 } from 'react-native';
 import { TickCircle } from 'iconsax-react-native';
 import { X } from 'lucide-react-native';
@@ -133,81 +134,89 @@ export default function OptionPickerModal({
   if (!showModal) return null;
 
   return (
-    <View style={sheetStyles.overlayWrapper}>
-      {/* Soft Backdrop */}
-      <Animated.View style={[sheetStyles.backdrop, { opacity: fadeAnim }]}>
-        <TouchableOpacity
-          style={sheetStyles.backdropTouch}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-      </Animated.View>
-
-      {/* Animated Bottom Sheet */}
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={[
-          sheetStyles.modalContainer,
-          { transform: [{ translateY: slideAnim }] },
-        ]}
-      >
-        {/* Top Pill Handle */}
-        <View style={sheetStyles.dragArea}>
-          <View style={sheetStyles.dragHandle} />
-        </View>
-
-        {/* Header Title Bar */}
-        <View className="flex-row items-center justify-between px-5 mb-3">
-          <Text className="text-[18px] font-urbanist-bold text-primary">
-            {title}
-          </Text>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={sheetStyles.overlayWrapper}>
+        {/* Soft Backdrop */}
+        <Animated.View style={[sheetStyles.backdrop, { opacity: fadeAnim }]}>
           <TouchableOpacity
+            style={sheetStyles.backdropTouch}
+            activeOpacity={1}
             onPress={onClose}
-            className="p-1.5 rounded-full active:bg-gray-100"
-          >
-            <X size={20} color="#626262" />
-          </TouchableOpacity>
-        </View>
+          />
+        </Animated.View>
 
-        {/* Options List */}
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          className="max-h-[320px]  pb-2"
+        {/* Animated Bottom Sheet */}
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={[
+            sheetStyles.modalContainer,
+            { transform: [{ translateY: slideAnim }] },
+          ]}
         >
-          {options.map((opt) => {
-            const isSelected = selectedValue === opt;
-            return (
-              <Pressable
-                key={opt}
-                onPress={() => {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  } catch (e) {}
-                  onSelect(opt);
-                  onClose();
-                }}
-                className={`flex-row items-center justify-between py-3.5 px-5 mb-1.5 ${
-                  isSelected ? 'bg-[#4186F7]/10' : 'active:bg-gray-100'
-                }`}
-              >
-                <Text
-                  className={`text-[15px] ${
-                    isSelected
-                    ? 'font-urbanist-bold text-[#4186F7]'
-                      : 'font-urbanist-semibold text-[#333333]'
+          {/* Top Pill Handle */}
+          <View style={sheetStyles.dragArea}>
+            <View style={sheetStyles.dragHandle} />
+          </View>
+
+          {/* Header Title Bar */}
+          <View className="flex-row items-center justify-between px-5 mb-3">
+            <Text className="text-[18px] font-urbanist-bold text-primary">
+              {title}
+            </Text>
+            <TouchableOpacity
+              onPress={onClose}
+              className="p-1.5 rounded-full active:bg-gray-100"
+            >
+              <X size={20} color="#626262" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Options List */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            className="max-h-[320px]  pb-2"
+          >
+            {options.map((opt) => {
+              const isSelected = selectedValue === opt;
+              return (
+                <Pressable
+                  key={opt}
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch (e) {}
+                    onSelect(opt);
+                    onClose();
+                  }}
+                  className={`flex-row items-center justify-between py-3.5 px-5 mb-1.5 ${
+                    isSelected ? 'bg-[#4186F7]/10' : 'active:bg-gray-100'
                   }`}
                 >
-                  {opt}
-                </Text>
-                {isSelected && (
-                  <TickCircle size={20} color="#4186F7" variant="Bold" />
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </Animated.View>
-    </View>
+                  <Text
+                    className={`text-[15px] ${
+                      isSelected
+                        ? 'font-urbanist-bold text-[#4186F7]'
+                        : 'font-urbanist-semibold text-[#333333]'
+                    }`}
+                  >
+                    {opt}
+                  </Text>
+                  {isSelected && (
+                    <TickCircle size={20} color="#4186F7" variant="Bold" />
+                  )}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 }
 

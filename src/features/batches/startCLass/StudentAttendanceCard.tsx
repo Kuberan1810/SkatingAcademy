@@ -1,10 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleProp, ViewStyle, ImageSourcePropType } from 'react-native';
-import { Image } from 'expo-image';
 import { Check, X } from 'lucide-react-native';
 import styles from '@/styles/styles';
-
-const DEFAULT_STUDENT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
+import StudentAvatar from '@/components/ui/StudentAvatar';
 
 export type AttendanceStatus = 'present' | 'absent' | 'none';
 
@@ -13,6 +11,9 @@ export interface StudentData {
   name: string;
   batchName?: string;
   avatar?: ImageSourcePropType | string;
+  attendanceStatus?: AttendanceStatus;
+  attendedClasses?: number;
+  conductedClasses?: number;
 }
 
 export interface StudentAttendanceCardProps {
@@ -30,14 +31,6 @@ export default function StudentAttendanceCard({
   style,
   className = '',
 }: StudentAttendanceCardProps) {
-  const resolvedAvatar = React.useMemo(() => {
-    if (!student.avatar) return DEFAULT_STUDENT_AVATAR;
-    if (typeof student.avatar === 'string') {
-      return { uri: student.avatar };
-    }
-    return student.avatar;
-  }, [student.avatar]);
-
   const handlePresentPress = () => {
     const nextStatus = status === 'present' ? 'none' : 'present';
     onStatusChange?.(student.id, nextStatus);
@@ -56,16 +49,13 @@ export default function StudentAttendanceCard({
       style={[style]}
       className={`flex-row items-center justify-between w-full bg-[#F9F9F9] p-5 border border-primary-border rounded-[28px] ${className}`}
     >
-      {/* Left: Avatar & Info */}
+      {/* Left: Student Avatar & Info */}
       <View className="flex-row items-center flex-1">
-        <View className=" rounded-full overflow-hidden justify-center items-center ">
-          <Image
-            source={resolvedAvatar}
-            style={{ width: 44, height: 44, borderRadius: 25 }}
-            contentFit="cover"
-            transition={200}
-          />
-        </View>
+        <StudentAvatar
+          name={student.name}
+          avatarUri={student.avatar}
+          size={44}
+        />
 
         <View className="ml-3.5 flex-1 justify-center">
           <Text className="text-[17px] font-urbanist-bold text-primary" numberOfLines={1}>

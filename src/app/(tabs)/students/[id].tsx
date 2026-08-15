@@ -20,9 +20,16 @@ export default function StudentProfileRoute() {
     <StudentProfileScreen
       studentId={params.id}
       student={parsedStudent || undefined}
+      initialTab={(params.initialTab as any) || 'overview'}
       shouldRestoreTabBarOnUnmount={true}
       onBackPress={() => {
-        if (router.canGoBack()) {
+        if (params.from === 'completed-class') {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/batches/completed-class' as any);
+          }
+        } else if (router.canGoBack()) {
           router.back();
         } else {
           router.replace('/(tabs)/students');

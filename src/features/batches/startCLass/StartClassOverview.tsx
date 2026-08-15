@@ -1,48 +1,43 @@
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
 import Search from '@/components/ui/Search';
+import Toast from '@/components/ui/Toast';
 import { router } from 'expo-router';
-import { Setting2, TickCircle } from 'iconsax-react-native';
+import { Setting2, User } from 'iconsax-react-native';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Text, View } from 'react-native';
-import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import AttendanceSummarySheet from './AttendanceSummarySheet';
 import StartClassSummary from './StartClassSummary';
 import SaveAttendanceButton from './StudentAttendanceButton';
 import { AttendanceStatus, StudentData } from './StudentAttendanceCard';
 import StudentList from './StudentList';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
-
-const INITIAL_STUDENTS: StudentData[] = [
-  { id: '1', name: 'Rahul Sharma', batchName: 'Morning Batch' },
-  { id: '2', name: 'Priya Menon', batchName: 'Morning Batch' },
-  { id: '3', name: 'Arjun Nair', batchName: 'Morning Batch' },
-  { id: '4', name: 'Sneha Patel', batchName: 'Morning Batch' },
-  { id: '5', name: 'Kiran Das', batchName: 'Morning Batch' },
-  { id: '6', name: 'Anjali Rao', batchName: 'Morning Batch' },
-  { id: '7', name: 'Vikram Iyer', batchName: 'Morning Batch' },
-  { id: '8', name: 'Deepa Krishnan', batchName: 'Morning Batch' },
-  { id: '9', name: 'Arun Kumar', batchName: 'Morning Batch' },
-];
+import { useConfirmAttendance } from '@/hooks/use-attendance';
+import { getErrorMessage } from '@/utils/error';
+import styles from '@/styles/styles';
 
 export interface StartClassOverviewProps {
   batchTitle?: string;
   batchName?: string;
   dateText?: string;
   students?: StudentData[];
+  sessionId?: string;
   onBackPress?: () => void;
   onSave?: (attendance: Record<string, AttendanceStatus>) => void;
 }
 
 export default function StartClassOverview({
-  batchTitle = 'Sathya Stadium Students',
-  batchName = 'Morning Batch (6:00 AM - 7:30 AM)',
-  dateText = 'Today · Oct 24, 2023',
-  students = INITIAL_STUDENTS,
+  batchTitle = 'Class Students',
+  batchName = 'Class Session',
+  dateText = 'Today',
+  students = [],
+  sessionId,
   onBackPress,
   onSave,
 }: StartClassOverviewProps) {
   const { hideTabBar, showTabBar } = useTabBarVisibility();
+  const confirmAttendanceMutation = useConfirmAttendance();
 
   useEffect(() => {
     hideTabBar();
@@ -53,41 +48,66 @@ export default function StartClassOverview({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
   const [showSummarySheet, setShowSummarySheet] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+
+  // Toast Notification State
+  const [toast, setToast] = useState<{
+    visible: boolean;
+    message: string;
+    type: 'success' | 'delete' | 'error';
+  }>({
+    visible: false,
+    message: '',
+    type: 'success',
+  });
+
+  const showToast = (message: string, type: 'success' | 'delete' | 'error' = 'success') => {
+    setToast({ visible: true, message, type });
+  };
+
+  const activeStudents = students || [];
 
   // Attendance state for all students
   const [attendanceMap, setAttendanceMap] = useState<
     Record<string, AttendanceStatus>
   >(() => {
     const initialMap: Record<string, AttendanceStatus> = {};
-    students.forEach((s) => {
-      initialMap[s.id] = 'present';
+    activeStudents.forEach((s) => {
+      initialMap[s.id] = s.attendanceStatus || 'present';
     });
     return initialMap;
   });
 
+  useEffect(() => {
+    if (students && students.length > 0) {
+      const newMap: Record<string, AttendanceStatus> = {};
+      students.forEach((s) => {
+        newMap[s.id] = s.attendanceStatus || 'present';
+      });
+      setAttendanceMap(newMap);
+    }
+  }, [students]);
+
   // Filter students based on search
   const filteredStudents = useMemo(() => {
-    if (!searchQuery.trim()) return students;
-    return students.filter(
+    if (!searchQuery.trim()) return activeStudents;
+    return activeStudents.filter(
       (s) =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.batchName?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [students, searchQuery]);
+  }, [activeStudents, searchQuery]);
 
   // Check if all students are present
   const allSelected = useMemo(() => {
-    if (students.length === 0) return false;
-    return students.every((s) => attendanceMap[s.id] === 'present');
-  }, [students, attendanceMap]);
+    if (activeStudents.length === 0) return false;
+    return activeStudents.every((s) => attendanceMap[s.id] === 'present');
+  }, [activeStudents, attendanceMap]);
 
   // Toggle Mark All Present
   const handleToggleSelectAll = (value: boolean) => {
     const newMap: Record<string, AttendanceStatus> = {};
-    students.forEach((s) => {
+    activeStudents.forEach((s) => {
       newMap[s.id] = value ? 'present' : 'none';
     });
     setAttendanceMap(newMap);
@@ -101,34 +121,61 @@ export default function StartClassOverview({
     }));
   };
 
-  // Open attendance summary sheet with loading state
+  // Open attendance summary sheet with mandatory validation check
   const handleSaveAttendance = () => {
+    const unmarkedStudent = activeStudents.find(
+      (s) => !attendanceMap[s.id] || attendanceMap[s.id] === 'none'
+    );
+
+    if (unmarkedStudent) {
+      showToast(`Please mark attendance for ${unmarkedStudent.name}`, 'error');
+      return;
+    }
+
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
       setShowSummarySheet(true);
-    }, 600);
+    }, 300);
   };
 
-  // Confirm attendance (final save with button loader & success toast)
+  // Confirm attendance (Calls POST /api/v1/attendance)
   const handleConfirmAttendance = () => {
-    setConfirmLoading(true);
-    setTimeout(() => {
-      setConfirmLoading(false);
-      setShowSummarySheet(false);
-      setShowToast(true);
+    const targetSessionId = Number(sessionId || 1);
 
-      setTimeout(() => {
-        setShowToast(false);
-        if (onSave) {
-          onSave(attendanceMap);
-        } else if (onBackPress) {
-          onBackPress();
-        } else {
-          router.back();
-        }
-      }, 1500);
-    }, 700);
+    const attendanceRecords = activeStudents.map((s) => ({
+      student_id: Number(s.id),
+      status: (attendanceMap[s.id] === 'absent' ? 'Absent' : 'Present') as 'Present' | 'Absent',
+    }));
+
+    confirmAttendanceMutation.mutate(
+      {
+        session_id: targetSessionId,
+        attendance: attendanceRecords,
+      },
+      {
+        onSuccess: () => {
+          setShowSummarySheet(false);
+          showToast('Attendance Confirmed & Class Completed!', 'success');
+          setTimeout(() => {
+            if (onSave) {
+              onSave(attendanceMap);
+            } else if (onBackPress) {
+              onBackPress();
+            } else if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)/batches' as any);
+            }
+          }, 1200);
+        },
+        onError: (err) => {
+          setShowSummarySheet(false);
+          const msg = getErrorMessage(err, 'Failed to confirm attendance');
+          showToast(msg, 'error');
+        },
+      }
+    );
   };
 
   const handleBack = () => {
@@ -143,24 +190,13 @@ export default function StartClassOverview({
 
   return (
     <ScreenWrapper>
-      {/* Success Toast Notification */}
-      {showToast && (
-        <Animated.View
-          entering={FadeInUp.duration(250)}
-          exiting={FadeOutUp.duration(200)}
-          className="absolute top-12 left-5 right-5 z-50 bg-[#167D44] rounded-[18px] p-4 flex-row items-center gap-3 shadow-lg"
-        >
-          <TickCircle size={24} color="#FFFFFF" variant="Bold" />
-          <View className="flex-1">
-            <Text className="text-[15px] font-urbanist-bold text-white">
-              Attendance Saved Successfully!
-            </Text>
-            <Text className="text-[12px] font-urbanist-medium text-white/90">
-              Batch records have been updated.
-            </Text>
-          </View>
-        </Animated.View>
-      )}
+      {/* Toast Notification Banner */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onDismiss={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
 
       {/* Header */}
       <Header
@@ -189,35 +225,51 @@ export default function StartClassOverview({
         <StartClassSummary
           date={dateText}
           batchName={batchName}
-          totalStudents={students.length > 0 ? students.length : 0}
+          totalStudents={activeStudents.length}
           allSelected={allSelected}
           onToggleSelectAll={handleToggleSelectAll}
         />
 
         {/* Student List */}
-        <StudentList
-          students={filteredStudents}
-          attendanceMap={attendanceMap}
-          onAttendanceChange={handleAttendanceChange}
-        />
+        {activeStudents.length > 0 ? (
+          <StudentList
+            students={filteredStudents}
+            attendanceMap={attendanceMap}
+            onAttendanceChange={handleAttendanceChange}
+          />
+        ) : (
+          <View style={styles.BoxStyle} className="py-8 items-center justify-center my-6">
+            <View style={styles.IconStyle} className="mb-2 p-2.5">
+              <User size={24} color="#8A8A8E" variant="Linear" />
+            </View>
+            <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
+              No Students Found
+            </Text>
+            <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
+              There are no enrolled students in this session.
+            </Text>
+          </View>
+        )}
       </Animated.ScrollView>
 
       {/* Sticky Bottom Action Button */}
-      <View className="absolute bottom-0 left-0 right-0">
-        <SaveAttendanceButton
-          loading={isSaving}
-          onPress={handleSaveAttendance}
-        />
-      </View>
+      {activeStudents.length > 0 && (
+        <View className="absolute bottom-0 left-0 right-0">
+          <SaveAttendanceButton
+            loading={isSaving}
+            onPress={handleSaveAttendance}
+          />
+        </View>
+      )}
 
       {/* Attendance Summary Bottom Sheet */}
       <AttendanceSummarySheet
         visible={showSummarySheet}
         batchName={batchName}
         dateText={dateText}
-        students={students}
+        students={activeStudents}
         attendanceMap={attendanceMap}
-        confirmLoading={confirmLoading}
+        confirmLoading={confirmAttendanceMutation.isPending}
         onClose={() => setShowSummarySheet(false)}
         onEditAttendance={() => setShowSummarySheet(false)}
         onConfirmAttendance={handleConfirmAttendance}

@@ -44,10 +44,10 @@ export default function StepBatchInformation({
         onChangeText={(text) => updateField('location', text)}
       />
 
-      {/* Description (Optional) */}
+      {/* Description */}
       <FormField
-        label="Description (Optional)"
-        placeholder="Sathya Stadium"
+        label="Description"
+        placeholder="Enter description"
         value={formData.description}
         onChangeText={(text) => updateField('description', text)}
         onFocus={onFocusBottomField}

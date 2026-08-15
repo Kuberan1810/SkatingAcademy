@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,14 @@ import {
   ViewStyle,
   ImageSourcePropType,
 } from 'react-native';
-import { Image } from 'expo-image';
 import {
   CallCalling,
   ProfileTick,
-  Calendar,
   CalendarRemove,
   CalendarTick,
 } from 'iconsax-react-native';
 import styles, { COLORS } from '@/styles/styles';
-
-const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
+import StudentAvatar from '@/components/ui/StudentAvatar';
 
 export interface FeeStudentListItem {
   id: string;
@@ -49,14 +46,6 @@ export default function FeeStudentCard({
   style,
   className = '',
 }: FeeStudentCardProps) {
-  const resolvedAvatar = useMemo(() => {
-    if (!student.avatar) return DEFAULT_AVATAR;
-    if (typeof student.avatar === 'string') {
-      return { uri: student.avatar };
-    }
-    return student.avatar;
-  }, [student.avatar]);
-
   const handleCall = () => {
     if (onCallPress) {
       onCallPress(student.phone);
@@ -79,11 +68,10 @@ export default function FeeStudentCard({
       {/* Top Row: Avatar, Student Info & Action Buttons */}
       <View className="flex-row items-center justify-between mb-3">
         <View className="flex-row items-center flex-1 mr-2">
-          <Image
-            source={resolvedAvatar}
-            style={{ width: 40, height: 40, borderRadius: 22 }}
-            contentFit="cover"
-            transition={200}
+          <StudentAvatar
+            name={student.name}
+            avatarUri={student.avatar}
+            size={40}
           />
           <View className="ml-2.5 flex-1 justify-center">
             <Text
@@ -132,8 +120,7 @@ export default function FeeStudentCard({
               <Text className="text-[13px] font-urbanist-semibold text-white tracking-tight">
                 Collect Fee
               </Text>
-              </TouchableOpacity>
-          
+            </TouchableOpacity>
           )}
         </View>
       </View>

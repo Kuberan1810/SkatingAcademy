@@ -28,6 +28,8 @@ export default function StepBatchInfo({
         onPressDropdown={onOpenBatchPicker}
       />
 
+      {/* Join Date disabled/commented out as requested */}
+      {/* 
       <FormField
         label="Join Date"
         placeholder="DD / MM / YYYY"
@@ -35,7 +37,8 @@ export default function StepBatchInfo({
         onChangeText={(text) => updateField('joinDate', text)}
         icon={CalendarEdit}
         onPress={onOpenJoinDatePicker}
-      />
+      /> 
+      */}
     </View>
   );
 }

@@ -1,6 +1,5 @@
 import PrimaryBtn from '@/components/ui/PrimaryBtn';
-import styles, { COLORS } from '@/styles/styles';
-import { Image } from 'expo-image';
+import StudentAvatar from '@/components/ui/StudentAvatar';
 import React from 'react';
 import {
   Animated,
@@ -17,6 +16,7 @@ import {
   UIManager,
 } from 'react-native';
 import { AttendanceStatus, StudentData } from './StudentAttendanceCard';
+import styles from '@/styles/styles';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   try {
@@ -27,8 +27,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const { height } = Dimensions.get('window');
-
-const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
 
 export interface AttendanceSummarySheetProps {
   visible: boolean;
@@ -80,9 +78,9 @@ function DrawerStatCard({
 
 export default function AttendanceSummarySheet({
   visible,
-  batchName = 'Sathya Stadium (6:00 AM - 7:30 AM)',
-  dateText = 'Tuesday, 22 July 2026',
-  students,
+  batchName = 'Class Session',
+  dateText = 'Today',
+  students = [],
   attendanceMap,
   onClose,
   onEditAttendance,
@@ -100,7 +98,6 @@ export default function AttendanceSummarySheet({
     setIsExpanded(expand);
   };
 
-  // PanResponder gesture control matching BatchOptionsBottomSheet: Drag down anywhere on sheet to close
   const panResponder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -120,7 +117,6 @@ export default function AttendanceSummarySheet({
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > 50 || gestureState.vy > 0.3) {
-          // Dragged DOWN: Close drawer
           Animated.parallel([
             Animated.spring(slideAnim, {
               toValue: height,
@@ -139,7 +135,6 @@ export default function AttendanceSummarySheet({
             onClose();
           });
         } else {
-          // Reset position
           Animated.parallel([
             Animated.spring(slideAnim, {
               toValue: 0,
@@ -195,31 +190,17 @@ export default function AttendanceSummarySheet({
 
   if (!showModal) return null;
 
-  const realAbsent = students.filter((s) => attendanceMap[s.id] === 'absent');
-  const allAbsentList =
-    realAbsent.length > 2
-      ? realAbsent
-      : [
-          { id: '1', name: 'Rahul Sharma', record: '20/24 Of Clasess' },
-          { id: '2', name: 'Sharma', record: '16/24 Of Clasess' },
-          { id: '3', name: 'Ananya Verma', record: '18/24 Of Clasess' },
-          { id: '4', name: 'Priya Singh', record: '14/24 Of Clasess' },
-          { id: '5', name: 'Karthik R', record: '12/24 Of Clasess' },
-          { id: '6', name: 'Siddharth M', record: '15/24 Of Clasess' },
-          { id: '7', name: 'Vikas Kumar', record: '19/24 Of Clasess' },
-          { id: '8', name: 'Meera Nair', record: '17/24 Of Clasess' },
-          { id: '9', name: 'Rohan Gupta', record: '13/24 Of Clasess' },
-          { id: '10', name: 'Divya Reddy', record: '21/24 Of Clasess' },
-          { id: '11', name: 'Aarav Patel', record: '11/24 Of Clasess' },
-          { id: '12', name: 'Kavya Shah', record: '15/24 Of Clasess' },
-        ];
+  // Derive real absent list based strictly on attendanceMap
+  const absentStudents = students.filter(
+    (s) => attendanceMap[s.id] === 'absent'
+  );
 
-  const totalStudents = students.length || 90;
-  const presentCount = totalStudents - allAbsentList.length;
-  const absentCount = allAbsentList.length;
+  const totalStudents = students.length;
+  const absentCount = absentStudents.length;
+  const presentCount = totalStudents - absentCount;
 
-  const visibleAbsent = allAbsentList.slice(0, 2);
-  const extraAbsentCount = allAbsentList.length - 2;
+  const visibleAbsent = absentStudents.slice(0, 2);
+  const extraAbsentCount = absentStudents.length - 2;
 
   return (
     <Modal
@@ -246,7 +227,7 @@ export default function AttendanceSummarySheet({
             { transform: [{ translateY: slideAnim }] },
           ]}
         >
-          {/* Drag Handle area with PanResponder handlers */}
+          {/* Drag Handle area */}
           <View style={sheetStyles.dragArea} {...panResponder.panHandlers}>
             <View style={sheetStyles.dragHandle} />
           </View>
@@ -267,8 +248,7 @@ export default function AttendanceSummarySheet({
           </Text>
 
           {/* Stats Row (3 Centered Cards) */}
-          <View 
-           className="flex-row gap-3 mt-5 mb-5 px-5">
+          <View className="flex-row gap-3 mt-5 mb-5 px-5">
             <DrawerStatCard
               title="TOTAL STUDENTS"
               value={totalStudents}
@@ -299,10 +279,13 @@ export default function AttendanceSummarySheet({
           <View className="px-5 mb-5">
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-[13px] font-urbanist-semibold text-[#626262] tracking-wider uppercase">
-                ABSENT STUDENTS ({allAbsentList.length})
+                ABSENT STUDENTS ({absentCount})
               </Text>
               {isExpanded && (
-                <TouchableOpacity activeOpacity={0.7} onPress={() => toggleExpand(false)}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+
+                  onPress={() => toggleExpand(false)}>
                   <Text className="text-[13px] font-urbanist-bold text-[#167D44]">
                     Show Less
                   </Text>
@@ -310,77 +293,72 @@ export default function AttendanceSummarySheet({
               )}
             </View>
 
-            {!isExpanded ? (
-              /* Compact Single Row View */
+            {absentCount === 0 ? (
+              <View className="py-4 px-4 bg-[#F9F9F9] rounded-[20px] border border-primary-border items-center justify-center">
+                <Text className="text-[14px] font-urbanist-medium text-secondary">
+                  All students are present today!
+                </Text>
+              </View>
+            ) : !isExpanded ? (
+              /* Compact View */
               <View className="flex-row items-center gap-3">
-                {visibleAbsent.map((s, idx) => (
+                {visibleAbsent.map((s) => (
                   <View
-                    key={s.id || idx}
+                    key={s.id}
                     className="flex-row items-center gap-2.5 flex-1"
                   >
-                    <View className=" rounded-full overflow-hidden  justify-center items-center">
-                      <Image
-                        source={DEFAULT_AVATAR}
-                        style={{ width: 40, height: 40, borderRadius: 24 }}
-                        contentFit="cover"
-                      />
-                    </View>
+                    <StudentAvatar name={s.name} avatarUri={s.avatar} size={40} />
                     <View className="flex-1 justify-center">
-                      <Text className="text-[16px] font-urbanist-bold text-primary" numberOfLines={1}>
+                      <Text className="text-[15px] font-urbanist-bold text-primary" numberOfLines={1}>
                         {s.name}
                       </Text>
-                      <Text className="text-[20px] font-urbanist-bold text-[#E54848]">
-                        {idx === 0 ? '20' : '16'}
-                        <Text className="text-[10px] font-urbanist-medium text-[#E54848]">
-                          /24 Of Clasess
+                      <Text className="text-[18px] font-urbanist-bold text-red-500">
+                        {s.attendedClasses ?? 0}
+                        <Text className="text-[11px] font-urbanist-semibold text-red-500">
+                          /{s.conductedClasses ?? 0} Of Classes
                         </Text>
                       </Text>
                     </View>
                   </View>
                 ))}
 
-                {/* +More Button */}
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={[styles.BlackInnerShadowStyle]}
-                  onPress={() => toggleExpand(true)}
-                  className="bg-[#FFFFFF] border border-primary-border rounded-[18px] p-4 justify-center items-center"
-                >
-                  <Text className="text-[12px] font-urbanist-bold text-primary tracking-tight">
-                    +{extraAbsentCount} More
-                  </Text>
-                </TouchableOpacity>
+                {extraAbsentCount > 0 && (
+                  <TouchableOpacity
+                    style={[styles.BlackInnerShadowStyle]}
+                    activeOpacity={0.8}
+                    onPress={() => toggleExpand(true)}
+                    className="bg-[#FFFFFF] border border-primary-border rounded-[18px] px-4 py-2.5 justify-center items-center"
+                  >
+                    <Text className="text-[12px] font-urbanist-semibold text-primary tracking-tight">
+                      +{extraAbsentCount} More
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
-              /* Expanded Scrollable List of All Absent Students */
+              /* Expanded Scrollable List */
               <ScrollView
-                style={{ height: 320 }}
+                style={{ maxHeight: 240 }}
                 showsVerticalScrollIndicator={true}
                 scrollEnabled={true}
                 nestedScrollEnabled={true}
                 contentContainerStyle={{ paddingBottom: 16 }}
               >
                 <View className="flex-row flex-wrap gap-x-2 gap-y-3.5 pb-2">
-                  {allAbsentList.map((s, idx) => (
+                  {absentStudents.map((s) => (
                     <View
-                      key={s.id || idx}
+                      key={s.id}
                       className="flex-row items-center gap-2.5 w-[48%]"
                     >
-                      <View className="rounded-full overflow-hidden  justify-center items-center">
-                        <Image
-                          source={DEFAULT_AVATAR}
-                          style={{ width: 40, height: 40, borderRadius: 24 }}
-                          contentFit="cover"
-                        />
-                      </View>
+                      <StudentAvatar name={s.name} avatarUri={s.avatar} size={40} />
                       <View className="flex-1 justify-center">
-                        <Text className="text-[16px] font-urbanist-bold text-primary" numberOfLines={1}>
+                        <Text className="text-[14px] font-urbanist-bold text-primary" numberOfLines={1}>
                           {s.name}
                         </Text>
-                        <Text className="text-[20px] font-urbanist-bold text-[#E54848]">
-                          {14 + (idx % 7)}
-                          <Text className="text-[10px] font-urbanist-medium text-[#E54848]">
-                            /24 Of Clasess
+                        <Text className="text-[17px] font-urbanist-bold text-red-500">
+                          {s.attendedClasses ?? 0}
+                          <Text className="text-[10px] font-urbanist-semibold text-red-500">
+                            /{s.conductedClasses ?? 0} Of Classes
                           </Text>
                         </Text>
                       </View>
@@ -398,6 +376,7 @@ export default function AttendanceSummarySheet({
               label="Edit Attendance"
               variant="outline"
               className="flex-1"
+              disabled={confirmLoading}
               onPress={() => {
                 onClose();
                 onEditAttendance?.();
@@ -451,39 +430,5 @@ const sheetStyles = StyleSheet.create({
     borderRadius: 19,
     backgroundColor: '#E5E5E5',
     marginBottom: 10,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  editButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editButtonText: {
-    fontSize: 15,
-    fontFamily: 'Urbanist_700Bold',
-    color: COLORS.primary,
-  },
-  confirmButton: {
-    flex: 1.3,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: '#167D44',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonText: {
-    fontSize: 15,
-    fontFamily: 'Urbanist_700Bold',
-    color: '#FFFFFF',
   },
 });

@@ -11,6 +11,7 @@ import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 import CollectFeeStudentCard, { CollectFeeStudentInfo } from './CollectFeeStudentCard';
 import CollectFeeAmountCard from './CollectFeeAmountCard';
 import CollectFeePaymentMethodCard, { PaymentMethodType } from './CollectFeePaymentMethodCard';
+import { useCollectFee } from '@/hooks/use-fees';
 
 export interface CollectFeeOverviewProps {
   student?: CollectFeeStudentInfo;
@@ -25,28 +26,20 @@ export interface CollectFeeOverviewProps {
   }) => void;
 }
 
-const DEFAULT_STUDENT: CollectFeeStudentInfo = {
-  id: '1',
-  name: 'Sharma',
-  studentId: 'ID: SA-2024-0892',
-  location: 'Sathya Stadium',
-  dueAmount: '₹1,200',
-  dueLabel: 'Due Today',
-};
 
 export default function CollectFeeOverview({
   student: providedStudent,
   onBackPress,
   onConfirmSuccess,
 }: CollectFeeOverviewProps) {
-  const student = useMemo(() => {
-    return {
-      ...DEFAULT_STUDENT,
-      ...providedStudent,
-    };
-  }, [providedStudent]);
+  const student = providedStudent || {};
 
-  // Hide tab bar while on Collect Fee screen
+  // Default to current month (1-12) and current year
+  const currentDate = useMemo(() => new Date(), []);
+  const [feeMonth, setFeeMonth] = useState<number>(currentDate.getMonth() + 1);
+  const [feeYear, setFeeYear] = useState<number>(currentDate.getFullYear());
+
+  // Hide tab bar while on Collect Fee screen (optimized effect)
   const { hideTabBar, showTabBar } = useTabBarVisibility();
 
   useEffect(() => {
@@ -54,7 +47,7 @@ export default function CollectFeeOverview({
     return () => {
       showTabBar();
     };
-  }, [hideTabBar, showTabBar]);
+  }, []);
 
   const [discount, setDiscount] = useState('');
   const [lateFine, setLateFine] = useState('');
@@ -63,6 +56,8 @@ export default function CollectFeeOverview({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const collectFeeMutation = useCollectFee();
 
   const scrollViewRef = useRef<Animated.ScrollView>(null);
 
@@ -98,12 +93,6 @@ export default function CollectFeeOverview({
 
   const handleNotesFocus = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
-    requestAnimationFrame(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    });
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 200);
   };
 
   // Calculate Net Payable amount dynamically
@@ -113,7 +102,7 @@ export default function CollectFeeOverview({
       return parseInt(cleaned, 10) || 0;
     };
 
-    const baseAmount = parseNumber(student.dueAmount || '₹1,200');
+    const baseAmount = parseNumber(student.dueAmount || '0');
     const discountVal = parseNumber(discount);
     const lateFineVal = parseNumber(lateFine);
 
@@ -121,11 +110,35 @@ export default function CollectFeeOverview({
     return `₹${total.toLocaleString('en-IN')}`;
   }, [student.dueAmount, discount, lateFine]);
 
-  const handleConfirm = () => {
-    if (isLoading || showToast) return;
-    setIsLoading(true);
+  const handleConfirm = async () => {
+    if (isLoading || showToast || collectFeeMutation.isPending) return;
 
-    setTimeout(() => {
+    const parseNumber = (val: string) => {
+      const cleaned = val.replace(/[^0-9]/g, '');
+      return parseInt(cleaned, 10) || 0;
+    };
+
+    const baseAmountNum = parseNumber(student.dueAmount || '0');
+    const discountNum = parseNumber(discount);
+    const lateFineNum = parseNumber(lateFine);
+    const netPayableNum = parseNumber(netPayable);
+
+    const studentIdNum = Number(student.id) || 1;
+
+    try {
+      setIsLoading(true);
+      await collectFeeMutation.mutateAsync({
+        student_id: studentIdNum,
+        base_amount: baseAmountNum,
+        fee_month: feeMonth,
+        fee_year: feeYear,
+        discount: discountNum,
+        late_fine: lateFineNum,
+        net_payable: netPayableNum,
+        payment_method: selectedMethod,
+        notes: notes.trim(),
+      });
+
       setIsLoading(false);
       setShowToast(true);
 
@@ -147,8 +160,14 @@ export default function CollectFeeOverview({
             router.replace('/(tabs)/fees' as any);
           }
         }
-      }, 2500);
-    }, 600);
+      }, 1000);
+    } catch (error: any) {
+      setIsLoading(false);
+      Alert.alert(
+        'Collection Failed',
+        error?.response?.data?.message || error?.message || 'Failed to collect fee. Please try again.'
+      );
+    }
   };
 
   const handleBack = () => {
@@ -162,7 +181,7 @@ export default function CollectFeeOverview({
   };
 
   return (
-    <ScreenWrapper className="bg-[#F8F9FB] flex-1">
+    <ScreenWrapper>
       {/* Success Toast Notification */}
       {showToast && (
         <Animated.View
@@ -176,7 +195,7 @@ export default function CollectFeeOverview({
               Payment Collected Successfully!
             </Text>
             <Text className="text-[12px] font-urbanist-medium text-white/90">
-              Collected {netPayable} via {selectedMethod} for {student.name}.
+              Collected {netPayable} via {selectedMethod} for {student.name || 'Student'}.
             </Text>
           </View>
         </Animated.View>
@@ -217,8 +236,11 @@ export default function CollectFeeOverview({
 
             {/* Card 2: Amount to Collect Details */}
             <CollectFeeAmountCard
-              amount={student.dueAmount || '₹1,200'}
-              feePeriodLabel="July 2026 Monthly Fee"
+              amount={student.dueAmount || '₹0'}
+              feeMonth={feeMonth}
+              onFeeMonthChange={setFeeMonth}
+              feeYear={feeYear}
+              onFeeYearChange={setFeeYear}
               discount={discount}
               onDiscountChange={setDiscount}
               lateFine={lateFine}

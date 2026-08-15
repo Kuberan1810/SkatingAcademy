@@ -22,18 +22,23 @@ export default function BatchStudentProfileRoute() {
     }
   }
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else if (params.from === 'completed-class') {
+      router.replace('/(tabs)/batches/completed-class' as any);
+    } else {
+      router.replace('/(tabs)/batches' as any);
+    }
+  };
+
   return (
     <StudentProfileScreen
       studentId={params.id}
       student={parsedStudent || undefined}
-      shouldRestoreTabBarOnUnmount={true}
-      onBackPress={() => {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)/batches' as any);
-        }
-      }}
+      initialTab={(params.initialTab as any) || 'overview'}
+      shouldRestoreTabBarOnUnmount={false}
+      onBackPress={handleBack}
     />
   );
 }

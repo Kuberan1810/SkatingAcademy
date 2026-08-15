@@ -24,6 +24,7 @@ interface SettingsScreenCardProps {
     user: UserProfileData;
     menuItems: MenuItemData[];
     onLogoutConfirm?: () => void;
+    isLoggingOut?: boolean;
 }
 
 interface MenuItemProps {
@@ -33,8 +34,6 @@ interface MenuItemProps {
     badgeCount?: number;
     isLogout?: boolean;
 }
-
-const DEAFULT_IMAGE = require('@/assets/images/home/dp.svg');
 
 const MenuItem: React.FC<MenuItemProps> = ({
     icon,
@@ -88,7 +87,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
 };
 
 const getInitials = (name: string) => {
-    if (!name) return '';
+    if (!name) return 'A';
     const words = name.trim().split(/\s+/);
     if (words.length >= 2) {
         return (words[0][0] + words[1][0]).toUpperCase();
@@ -97,10 +96,10 @@ const getInitials = (name: string) => {
     } else if (words.length === 1) {
         return words[0].toUpperCase();
     }
-    return '';
+    return 'A';
 };
 
-export default function SettingsScreenCard({ user, menuItems, onLogoutConfirm }: SettingsScreenCardProps) {
+export default function SettingsScreenCard({ user, menuItems, onLogoutConfirm, isLoggingOut = false }: SettingsScreenCardProps) {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     return (
@@ -109,7 +108,6 @@ export default function SettingsScreenCard({ user, menuItems, onLogoutConfirm }:
             <View className="flex-row items-center mb-8">
                 {user.image ? (
                     <Image
-
                         source={{ uri: user.image }}
                         className="w-[88px] h-[88px] rounded-full mr-4 bg-gray-200"
                     />
@@ -150,6 +148,7 @@ export default function SettingsScreenCard({ user, menuItems, onLogoutConfirm }:
 
             <LogoutConfirmationModal
                 visible={showLogoutModal}
+                isLoading={isLoggingOut}
                 onClose={() => setShowLogoutModal(false)}
                 onConfirm={onLogoutConfirm}
             />

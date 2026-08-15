@@ -1,10 +1,8 @@
 import styles, { COLORS } from '@/styles/styles';
-import { Image } from 'expo-image';
 import { Calendar, Location, Stickynote } from 'iconsax-react-native';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ImageSourcePropType, StyleProp, Text, View, ViewStyle } from 'react-native';
-
-const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
+import StudentAvatar from '@/components/ui/StudentAvatar';
 
 export interface StudentSummaryCardProps {
   name: string;
@@ -25,14 +23,6 @@ export default function StudentSummaryCard({
   style,
   className = '',
 }: StudentSummaryCardProps) {
-  const resolvedAvatar = useMemo(() => {
-    if (!avatar) return DEFAULT_AVATAR;
-    if (typeof avatar === 'string') {
-      return { uri: avatar };
-    }
-    return avatar;
-  }, [avatar]);
-
   return (
     <View
       style={[style]}
@@ -48,15 +38,14 @@ export default function StudentSummaryCard({
         </View>
       </View>
 
-      {/* Middle Row: Avatar & Student Info */}
+      {/* Middle Row: Student Avatar & Student Info */}
       <View className="flex-row items-center">
-        <Image
-          source={resolvedAvatar}
-          style={{ width: 40, height: 40, borderRadius: 26 }}
-          contentFit="cover"
-          transition={200}
+        <StudentAvatar
+          name={name}
+          avatarUri={avatar}
+          size={44}
         />
-        <View className="ml-2.5 flex-1">
+        <View className="ml-3 flex-1">
           <Text
             numberOfLines={1}
             className="text-[16px] font-urbanist-semibold text-primary tracking-tight"

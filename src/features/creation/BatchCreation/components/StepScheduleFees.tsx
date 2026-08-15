@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { Calendar, Clock, ArrowDown2 } from 'iconsax-react-native';
+import { Calendar, Clock } from 'iconsax-react-native';
 import FormField from './FormField';
 import { BatchFormData } from '../types';
 
@@ -91,10 +91,13 @@ export default function StepScheduleFees({
           <Text className="text-[14px] font-urbanist-semibold text-primary">
             Monthly Fee
           </Text>
-          <View className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-4">
+          <View className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-4 gap-1.5">
+            <Text className="text-[15px] font-urbanist-medium text-[#333]">
+              ₹
+            </Text>
             <TextInput
-              className="flex-1 text-[15px] font-urbanist-medium text-[#111827] p-0"
-              placeholder="₹1,250"
+              className="flex-1 text-[15px] font-urbanist-medium text-[#333] p-0"
+              placeholder="1,250"
               placeholderTextColor="#A2A2A7"
               value={formData.monthlyFee}
               onChangeText={(text) => updateField('monthlyFee', text)}
@@ -109,10 +112,13 @@ export default function StepScheduleFees({
           <Text className="text-[14px] font-urbanist-semibold text-primary">
             Yearly Fee
           </Text>
-          <View className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-4">
+          <View className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-4 gap-1.5">
+            <Text className="text-[15px] font-urbanist-medium text-[#333]">
+              ₹
+            </Text>
             <TextInput
-              className="flex-1 text-[15px] font-urbanist-medium text-[#111827] p-0"
-              placeholder="₹1,250"
+              className="flex-1 text-[15px] font-urbanist-medium text-[#333] p-0"
+              placeholder="15,000"
               placeholderTextColor="#A2A2A7"
               value={formData.yearlyFee}
               onChangeText={(text) => updateField('yearlyFee', text)}

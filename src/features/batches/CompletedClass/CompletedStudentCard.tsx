@@ -1,10 +1,8 @@
 import React from 'react';
-import { View, Text, ImageSourcePropType } from 'react-native';
-import { Image } from 'expo-image';
-import { CalendarTick, CalendarRemove } from 'iconsax-react-native';
+import { View, Text, TouchableOpacity, ImageSourcePropType } from 'react-native';
+import { CalendarTick } from 'iconsax-react-native';
 import styles, { COLORS } from '@/styles/styles';
-
-const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
+import StudentAvatar from '@/components/ui/StudentAvatar';
 
 export interface CompletedStudentItem {
   id: string;
@@ -17,29 +15,29 @@ export interface CompletedStudentItem {
 
 export interface CompletedStudentCardProps {
   student: CompletedStudentItem;
+  onPress?: () => void;
 }
 
-export default function CompletedStudentCard({ student }: CompletedStudentCardProps) {
+export default function CompletedStudentCard({ student, onPress }: CompletedStudentCardProps) {
   const isPresent = student.status === 'present';
-  const resolvedAvatar =
-    typeof student.avatar === 'string'
-      ? { uri: student.avatar }
-      : student.avatar || DEFAULT_AVATAR;
 
   const ratioText = student.attendanceRatio || '20/24';
   const [num, denom] = ratioText.includes('/') ? ratioText.split('/') : [ratioText, '24'];
 
+  const Container = onPress ? TouchableOpacity : View;
+
   return (
-    <View
+    <Container
+      activeOpacity={0.8}
+      onPress={onPress}
       className="bg-white rounded-[28px] p-3.5 border border-primary-border flex-row items-center justify-between"
     >
       {/* Left: Avatar + Name & Present/Absent Badge */}
-      <View className="flex-row items-center flex-1 ">
-        {/* Avatar Image */}
-        <Image
-          source={resolvedAvatar}
-          style={{ width: 40, height: 40, borderRadius: 25 }}
-          contentFit="cover"
+      <View className="flex-row items-center flex-1">
+        <StudentAvatar
+          name={student.name}
+          avatarUri={student.avatar}
+          size={40}
         />
 
         <View className="ml-3.5 flex-1 justify-center">
@@ -117,6 +115,6 @@ export default function CompletedStudentCard({ student }: CompletedStudentCardPr
           </Text>
         </View>
       </View>
-    </View>
+    </Container>
   );
 }

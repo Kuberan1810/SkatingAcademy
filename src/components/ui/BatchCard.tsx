@@ -29,6 +29,8 @@ export interface BatchCardProps {
   status?: BatchStatusVariant;
   /** Custom label for action button */
   actionLabel?: string;
+  /** Loading state for start class action button */
+  loading?: boolean;
   /** Callback when action button (Start / View Attendance) is pressed */
   onActionPress?: () => void;
   /** Callback when 3-dots context menu button is pressed */
@@ -45,10 +47,11 @@ export default function BatchCard({
   title,
   time,
   studentsCount,
-  date = '10 Jul 2026',
+  date ,
   attendance,
   status,
   actionLabel,
+  loading = false,
   onActionPress,
   onMorePress,
   onPressCard,
@@ -61,16 +64,16 @@ export default function BatchCard({
       ? `${studentsCount} Students`
       : studentsCount;
 
-  let presentCount = 20;
-  let totalCount = 24;
+  let presentCount = 0;
+  let totalCount =0;
   if (typeof attendance === 'object') {
     presentCount = attendance.present;
     totalCount = attendance.total;
   } else if (typeof attendance === 'string') {
     const parts = attendance.split('/');
     if (parts.length === 2) {
-      presentCount = parseInt(parts[0], 10) || 20;
-      totalCount = parseInt(parts[1], 10) || 24;
+      presentCount = parseInt(parts[0], 10) ;
+      totalCount = parseInt(parts[1], 10) ;
     }
   }
 
@@ -183,11 +186,12 @@ export default function BatchCard({
         </View>
       </BodyContainer>
 
-      {/* Bottom Row: Reusable Primary Action Button (Independent Touchable) */}
+      {/* Bottom Row: Reusable Primary Action Button */}
       <PrimaryBtn
         label={buttonText}
         onPress={onActionPress}
         variant={isCompleted ? 'green' : 'black'}
+        loading={loading}
       />
     </View>
   );

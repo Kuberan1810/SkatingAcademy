@@ -15,6 +15,7 @@ export interface BatchFormData {
 }
 
 export interface CreateBatchScreenProps {
+  batchId?: number | string;
   initialValues?: Partial<BatchFormData>;
   mode?: 'create' | 'edit';
   headerTitle?: string;
