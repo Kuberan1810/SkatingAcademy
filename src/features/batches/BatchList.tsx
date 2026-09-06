@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleProp, ViewStyle, ActivityIndicator } from 'react-native';
 import { Layer } from 'iconsax-react-native';
 import { router } from 'expo-router';
@@ -9,13 +9,18 @@ import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 import Toast from '@/components/ui/Toast';
 import styles from '@/styles/styles';
 import { ApiBatchItem } from '@/types/batch';
-import { BatchCardSkeleton } from '@/components/ui/Skeleton';
-import { useDeleteBatch } from '@/hooks/use-batches';
+import { BatchCardSkeleton, SkeletonGroup } from '@/components/ui/Skeleton';
+import { useDeleteBatch, prefetchBatchStudents } from '@/hooks/use-batches';
+import { useQueryClient } from '@tanstack/react-query';
 import { useIncrementalList } from '@/hooks/use-incremental-list';
+
+import ScheduleCompensationModal from './components/ScheduleCompensationModal';
 
 export interface BatchItem extends BatchCardProps {
     id: string;
     category?: string;
+    session_id?: string;
+    sessionId?: string;
 }
 
 export interface BatchListProps {
@@ -29,10 +34,12 @@ export interface BatchListProps {
     onStartPress?: (item: BatchItem) => void;
     onAttendancePress?: (item: BatchItem) => void;
     onMorePress?: (item: BatchItem) => void;
+    onScheduleExtraClass?: (item: BatchItem) => void;
     onViewDetails?: (item: BatchItem) => void;
     onEditBatch?: (item: BatchItem) => void;
     onDeleteBatch?: (item: BatchItem) => void;
     onTabChange?: (tab: string) => void;
+    onScrollListener?: (onScroll: (e: any) => void) => void;
     searchQuery?: string;
     sortBy?: string;
     style?: StyleProp<ViewStyle>;
@@ -41,8 +48,11 @@ export interface BatchListProps {
 
 const mapToBatchItem = (b: BatchItem | ApiBatchItem): BatchItem => {
     const raw = b as any;
+    const sId = raw.session_id || raw.sessionId ? String(raw.session_id || raw.sessionId) : undefined;
     return {
         id: String(raw.id),
+        session_id: sId,
+        sessionId: sId,
         title: raw.title || raw.batch_name || 'Batch',
         date: raw.date || '',
         time: raw.time || '',
@@ -59,22 +69,25 @@ export default function BatchList({
     batches = [],
     isLoading = false,
     loadingBatchId,
-    tabs = ['All', 'Today', 'Morning', 'Evening', 'Completed'],
+    tabs = ['All', 'Today', 'Morning', 'Evening', 'Completed', 'No Class'],
     emptyText = 'No batches found',
     onBatchPress,
     onStartPress,
     onAttendancePress,
     onMorePress,
+    onScheduleExtraClass,
     onViewDetails,
     onEditBatch,
     onDeleteBatch,
     onTabChange,
+    onScrollListener,
     searchQuery = '',
     sortBy = 'recent',
     style,
     className = '',
 }: BatchListProps) {
     const deleteBatchMutation = useDeleteBatch();
+    const queryClient = useQueryClient();
 
     const normalizedBatches = React.useMemo(() => {
         return batches.map(mapToBatchItem);
@@ -83,6 +96,7 @@ export default function BatchList({
     const [activeFilter, setActiveFilter] = useState('All');
     const [selectedBatch, setSelectedBatch] = useState<BatchItem | null>(null);
     const [batchToDelete, setBatchToDelete] = useState<BatchItem | null>(null);
+    const [batchToScheduleCompensation, setBatchToScheduleCompensation] = useState<BatchItem | null>(null);
     const [isOptionsVisible, setIsOptionsVisible] = useState(false);
 
     // Toast State
@@ -101,10 +115,23 @@ export default function BatchList({
             const matchesSearch = batch.title.toLowerCase().includes(searchQuery.toLowerCase());
             if (!matchesSearch) return false;
 
+            const normalizedStatus = (batch.status || '').toLowerCase();
+            const isCompleted = normalizedStatus === 'completed';
+            const isNoClass =
+                normalizedStatus === 'no_class' ||
+                normalizedStatus === 'noclass' ||
+                normalizedStatus === 'no class' ||
+                (batch.actionLabel || '').toLowerCase() === 'no class';
+
             if (activeFilter === 'All') return true;
-            if (activeFilter === 'Completed') return batch.status === 'completed' || !!batch.attendance;
+            if (activeFilter === 'Today') {
+                const dateStr = (batch.date || '').toLowerCase();
+                return dateStr.includes('today') || (!isCompleted && !isNoClass);
+            }
             if (activeFilter === 'Morning') return batch.category === 'Morning' || batch.title.toLowerCase().includes('morning');
             if (activeFilter === 'Evening') return batch.category === 'Evening' || batch.title.toLowerCase().includes('evening');
+            if (activeFilter === 'Completed') return isCompleted;
+            if (activeFilter === 'No Class' || activeFilter === 'NoClass') return isNoClass;
             return true;
         });
 
@@ -133,22 +160,84 @@ export default function BatchList({
     const {
         displayedItems: displayedBatches,
         hasMore: hasMoreBatches,
+        onScroll: onIncrementalScroll,
     } = useIncrementalList({
         items: filteredBatches,
         pageSize: 10,
         isLoading,
     });
 
-    const handleTabSelect = (tab: string) => {
+    useEffect(() => {
+        if (onScrollListener && onIncrementalScroll) {
+            onScrollListener(onIncrementalScroll);
+        }
+    }, [onIncrementalScroll, onScrollListener]);
+
+    const handleTabSelect = useCallback((tab: string) => {
         setActiveFilter(tab);
         onTabChange?.(tab);
-    };
+    }, [onTabChange]);
 
-    const handleOpenOptions = (item: BatchItem) => {
+    const handleOpenOptions = useCallback((item: BatchItem) => {
         setSelectedBatch(item);
         setIsOptionsVisible(true);
         onMorePress?.(item);
-    };
+    }, [onMorePress]);
+
+    const handleBatchPress = useCallback((item: BatchItem) => {
+        if (item.id) {
+            prefetchBatchStudents(queryClient, item.id);
+        }
+        if (onBatchPress) {
+            onBatchPress(item);
+        } else if ((item.status || '').toLowerCase() === 'no_class' || (item.status || '').toLowerCase() === 'noclass') {
+            const targetSessionId = item.sessionId || item.session_id || item.id;
+            router.push({
+                pathname: '/(tabs)/batches/completed-class',
+                params: {
+                    title: item.title,
+                    sessionId: targetSessionId,
+                    from: 'batches',
+                },
+            } as any);
+        } else {
+            router.push({
+                pathname: '/(tabs)/batches/StudentListScreen',
+                params: {
+                    id: String(item.id),
+                    title: item.title,
+                    batch_name: item.title,
+                    totalStudents: item.studentsCount ? `${item.studentsCount} Students` : undefined,
+                    avgAttendance: item.attendance ? `${item.attendance}` : undefined,
+                },
+            } as any);
+        }
+    }, [onBatchPress, queryClient]);
+
+    const handleActionPress = useCallback((item: BatchItem) => {
+        const isCompleted = (item.status || '').toLowerCase() === 'completed';
+        if (isCompleted) {
+            if (onAttendancePress) {
+                onAttendancePress(item);
+            } else {
+                const targetSessionId = item.sessionId || item.session_id || item.id;
+                router.push({
+                    pathname: '/(tabs)/batches/completed-class',
+                    params: {
+                        title: item.title,
+                        sessionId: targetSessionId,
+                        from: 'batches',
+                    },
+                } as any);
+            }
+        } else {
+            if (onStartPress) {
+                onStartPress(item);
+            } else {
+                router.push('/(tabs)/batches/start-class' as any);
+            }
+        }
+    }, [onAttendancePress, onStartPress]);
 
     return (
         <View style={style} className={`mt-[30px] ${className}`}>
@@ -181,11 +270,11 @@ export default function BatchList({
             {/* Batch Cards List */}
             <View className="gap-5">
                 {isLoading && filteredBatches.length === 0 ? (
-                    <View>
+                    <SkeletonGroup>
                         <BatchCardSkeleton />
                         <BatchCardSkeleton />
                         <BatchCardSkeleton />
-                    </View>
+                    </SkeletonGroup>
                 ) : filteredBatches.length > 0 ? (
                     <>
                         {displayedBatches.map((item) => (
@@ -199,30 +288,8 @@ export default function BatchList({
                                 status={item.status}
                                 actionLabel={item.actionLabel}
                                 loading={String(item.id) === String(loadingBatchId)}
-                                onPressCard={() => {
-                                    if (onBatchPress) {
-                                        onBatchPress(item);
-                                    } else if (item.status === 'completed' || item.attendance) {
-                                        router.push('/(tabs)/batches/completed-class' as any);
-                                    } else {
-                                        router.push('/(tabs)/batches/StudentListScreen' as any);
-                                    }
-                                }}
-                                onActionPress={() => {
-                                    if (item.status === 'completed' || item.attendance) {
-                                        if (onAttendancePress) {
-                                            onAttendancePress(item);
-                                        } else {
-                                            router.push('/(tabs)/batches/completed-class' as any);
-                                        }
-                                    } else {
-                                        if (onStartPress) {
-                                            onStartPress(item);
-                                        } else {
-                                            router.push('/(tabs)/batches/start-class' as any);
-                                        }
-                                    }
-                                }}
+                                onPressCard={() => handleBatchPress(item)}
+                                onActionPress={() => handleActionPress(item)}
                                 onMorePress={() => handleOpenOptions(item)}
                             />
                         ))}
@@ -255,6 +322,13 @@ export default function BatchList({
                 visible={isOptionsVisible}
                 batch={selectedBatch}
                 onClose={() => setIsOptionsVisible(false)}
+                onScheduleExtraClass={(batch) => {
+                    setIsOptionsVisible(false);
+                    setTimeout(() => {
+                        setBatchToScheduleCompensation(batch as BatchItem);
+                        onScheduleExtraClass?.(batch as BatchItem);
+                    }, 200);
+                }}
                 onViewDetails={(batch) => onViewDetails?.(batch as BatchItem)}
                 onEditBatch={(batch) => onEditBatch?.(batch as BatchItem)}
                 onManageAttendance={(batch) => onAttendancePress?.(batch as BatchItem)}
@@ -263,6 +337,20 @@ export default function BatchList({
                     setTimeout(() => {
                         setBatchToDelete(batch as BatchItem);
                     }, 250);
+                }}
+            />
+
+            {/* Schedule Extra / Compensation Class Modal */}
+            <ScheduleCompensationModal
+                visible={!!batchToScheduleCompensation}
+                batch={batchToScheduleCompensation}
+                onClose={() => setBatchToScheduleCompensation(null)}
+                onSuccess={(msg) => {
+                    setToast({
+                        visible: true,
+                        message: msg,
+                        type: 'success',
+                    });
                 }}
             />
 

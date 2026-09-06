@@ -20,6 +20,19 @@ export default function DashboardCompletedClassScreen() {
 
   const details = completedData?.session_details;
 
+  const isCompensation =
+    Boolean(details?.is_compensation_class) ||
+    Boolean((completedData as any)?.is_compensation_class) ||
+    params.isCompensation === 'true' ||
+    params.isCompensation === '1' ||
+    Boolean(params.compensationReason);
+
+  const compReason =
+    details?.compensation_reason ||
+    (completedData as any)?.compensation_reason ||
+    params.compensationReason ||
+    null;
+
   return (
     <CompletedClassOverview
       batchTitle={details?.batch_title || (params.title ? `${params.title} Students` : undefined)}
@@ -30,6 +43,8 @@ export default function DashboardCompletedClassScreen() {
       absentCount={details?.absent_count}
       students={mappedStudents}
       isLoading={isLoading}
+      isCompensationClass={isCompensation}
+      compensationReason={compReason}
       onBackPress={() => {
         if (params.from === 'upcoming-sessions') {
           router.replace('/(tabs)/dashboard/upcoming-sessions' as any);

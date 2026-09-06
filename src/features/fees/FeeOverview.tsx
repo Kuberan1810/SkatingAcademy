@@ -14,8 +14,12 @@ import FeeStudentCard, { FeeStudentListItem } from './FeeStudentCard';
 import RecentPaymentCard, { RecentPaymentItem } from './RecentPaymentCard';
 import BtnCom from '@/components/ui/BtnCom';
 import SortBottomSheet, { SortOptionItem } from '@/components/ui/SortBottomSheet';
-import { FeeCardSkeleton } from '@/components/ui/Skeleton';
+import ExportFeeOverviewModal, { ExportFeeOverviewFilterValues } from '@/components/ui/ExportFeeOverviewModal';
+import Toast from '@/components/ui/Toast';
+import { FeeCardSkeleton, FeesPageSkeleton } from '@/components/ui/Skeleton';
 import { useIncrementalList } from '@/hooks/use-incremental-list';
+import { useExportFeeOverviewReport } from '@/hooks/use-reports';
+import { getErrorMessage } from '@/utils/error';
 
 const SORT_OPTIONS: SortOptionItem[] = [
   { id: 'recent', label: 'Recently Added' },
@@ -69,6 +73,51 @@ export default function FeeOverview({
   const [activeTab, setActiveTab] = useState<FeeFilterTab>('All');
   const [sortBy, setSortBy] = useState('recent');
   const [isSortVisible, setIsSortVisible] = useState(false);
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+
+  const exportFeeOverviewMutation = useExportFeeOverviewReport();
+
+  // Toast notification state
+  const [toast, setToast] = useState<{
+    visible: boolean;
+    message: string;
+    type: 'success' | 'delete' | 'error';
+  }>({
+    visible: false,
+    message: '',
+    type: 'success',
+  });
+
+  const showToast = (message: string, type: 'success' | 'delete' | 'error' = 'success') => {
+    setToast({ visible: true, message, type });
+  };
+
+  const handleExportReport = async (
+    filters: ExportFeeOverviewFilterValues,
+    actionType: 'download' | 'share' = 'download'
+  ) => {
+    try {
+      const result = await exportFeeOverviewMutation.mutateAsync({
+        month: filters.month ?? undefined,
+        year: filters.year ?? undefined,
+        batch_id: filters.batchId ?? undefined,
+        fee_status: filters.feeStatus !== 'all' ? filters.feeStatus : undefined,
+        payment_method: filters.paymentMethod !== 'all' ? filters.paymentMethod : undefined,
+        format: filters.format,
+        actionType,
+      });
+      showToast(
+        result.message ||
+          (actionType === 'share'
+            ? 'Fee overview report shared successfully!'
+            : `Fee overview report (${filters.format.toUpperCase()}) downloaded successfully!`),
+        'success'
+      );
+      setIsExportModalVisible(false);
+    } catch (err: any) {
+      showToast(getErrorMessage(err) || 'Failed to export fee overview report', 'error');
+    }
+  };
 
   const tabs: FeeFilterTab[] = ['All', 'Paid', 'Unpaid', 'Overdue'];
 
@@ -144,15 +193,21 @@ export default function FeeOverview({
 
   return (
     <ScreenWrapper>
+      {/* Toast Notification Banner */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onDismiss={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
+
       {/* Top Header */}
       <Header
         variant="page"
         title={screenTitle}
         onBackPress={handleBack}
         rightIcon={ExportSquare}
-        onRightPress={() => {
-          console.log('Export pressed');
-        }}
+        onRightPress={() => setIsExportModalVisible(true)}
       />
 
       {/* Search Bar */}
@@ -188,181 +243,187 @@ export default function FeeOverview({
           paddingBottom: 120,
         }}
       >
-        {/* Overview Section */}
-        <Text className="text-[22px] font-urbanist-bold text-primary mb-3 tracking-tight">
-          Overview
-        </Text>
-        <View className="flex-row flex-wrap -mx-1.5 mb-7">
-          <View className="w-1/2 px-1.5 mb-3">
-            <StatsCard
-              variant="purple"
-              title="Total Students"
-              value={totalStudentsCount}
-              subtitle="Enrolled Students"
-            />
-          </View>
-          <View className="w-1/2 px-1.5 mb-3">
-            <StatsCard
-              variant="peach"
-              title="Today's Collection"
-              value={todayCollectionCount}
-              valueSuffix={totalCollectionTarget ? `/ ${totalCollectionTarget}` : undefined}
-              subtitle="Collection Target"
-            />
-          </View>
-          <View className="w-1/2 px-1.5">
-            <StatsCard
-              variant="blue"
-              title="Pending Fees"
-              value={pendingFeesAmount}
-              subtitle="Total Overdue / Pending"
-            />
-          </View>
-          <View className="w-1/2 px-1.5">
-            <StatsCard
-              variant="green"
-              title="This Month"
-              value={thisMonthAmount}
-              subtitle="Collected Fees"
-            />
-          </View>
-        </View>
-
-        {/* Student List Section */}
-        <View className="flex-row items-center justify-between mb-5">
-          <Text className="text-[22px] font-urbanist-bold text-primary tracking-tight">
-            Student List
-          </Text>
-          <BtnCom
-            label="View All"
-            onClick={() => {
-              if (onViewAllStudents) {
-                onViewAllStudents();
-              } else {
-                router.push('/(tabs)/fees/student-list' as any);
-              }
-            }}
-          />
-        </View>
-
-        {/* Filter Tabs using reusable FiltersTabs component */}
-        <View className="mb-4">
-          <FiltersTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onSelectTab={(tabId) => setActiveTab(tabId as FeeFilterTab)}
-          />
-        </View>
-
-        {/* Student Cards List */}
-        <View className="gap-3 mb-8">
-          {isLoading ? (
-            <View>
-              <FeeCardSkeleton />
-              <FeeCardSkeleton />
-              <FeeCardSkeleton />
-            </View>
-          ) : filteredStudents.length > 0 ? (
-            <>
-              {overviewDisplayedStudents.map((student) => (
-                <FeeStudentCard
-                  key={student.id}
-                  student={student}
-                  onPress={onStudentPress}
-                  onCollectPress={
-                    onCollectFeePress
-                      ? () => onCollectFeePress(student)
-                      : () => {
-                          const studentForCollect = {
-                            id: student.id,
-                            name: student.name,
-                            studentId: `ID: SA-2024-${(student.id || '1').toString().padStart(4, '0')}`,
-                            location: student.location || 'Batch',
-                            dueAmount: student.amount || '₹1,250',
-                            dueLabel: 'Due Amount',
-                          };
-                          router.push({
-                            pathname: '/(tabs)/fees/CollectFee' as any,
-                            params: { studentData: JSON.stringify(studentForCollect) },
-                          });
-                        }
-                  }
+        {isLoading && students.length === 0 ? (
+          <FeesPageSkeleton />
+        ) : (
+          <>
+            {/* Overview Section */}
+            <Text className="text-[22px] font-urbanist-bold text-primary mb-3 tracking-tight">
+              Overview
+            </Text>
+            <View className="flex-row flex-wrap -mx-1.5 mb-7">
+              <View className="w-1/2 px-1.5 mb-3">
+                <StatsCard
+                  variant="purple"
+                  title="Total Students"
+                  value={totalStudentsCount}
+                  subtitle="Enrolled Students"
                 />
-              ))}
-              {filteredStudents.length > 5 && (
-                <View className="py-2 flex-row items-center justify-end">
-                  <TouchableOpacity
-                    style={[styles.BlackInnerShadowStyle]}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      if (onViewAllStudents) {
-                        onViewAllStudents();
-                      } else {
-                        router.push('/(tabs)/fees/student-list' as any);
+              </View>
+              <View className="w-1/2 px-1.5 mb-3">
+                <StatsCard
+                  variant="peach"
+                  title="Today's Collection"
+                  value={todayCollectionCount}
+                  valueSuffix={totalCollectionTarget ? `/ ${totalCollectionTarget}` : undefined}
+                  subtitle="Collection Target"
+                />
+              </View>
+              <View className="w-1/2 px-1.5">
+                <StatsCard
+                  variant="blue"
+                  title="Pending Fees"
+                  value={pendingFeesAmount}
+                  subtitle="Total Overdue / Pending"
+                />
+              </View>
+              <View className="w-1/2 px-1.5">
+                <StatsCard
+                  variant="green"
+                  title="This Month"
+                  value={thisMonthAmount}
+                  subtitle="Collected Fees"
+                />
+              </View>
+            </View>
+
+            {/* Student List Section */}
+            <View className="flex-row items-center justify-between mb-5">
+              <Text className="text-[22px] font-urbanist-bold text-primary tracking-tight">
+                Student List
+              </Text>
+              <BtnCom
+                label="View All"
+                onClick={() => {
+                  if (onViewAllStudents) {
+                    onViewAllStudents();
+                  } else {
+                    router.push('/(tabs)/fees/student-list' as any);
+                  }
+                }}
+              />
+            </View>
+
+            {/* Filter Tabs using reusable FiltersTabs component */}
+            <View className="mb-4">
+              <FiltersTabs
+                tabs={tabs}
+                activeTab={activeTab}
+                onSelectTab={(tabId) => setActiveTab(tabId as FeeFilterTab)}
+              />
+            </View>
+
+            {/* Student Cards List */}
+            <View className="gap-3 mb-8">
+              {isLoading ? (
+                <View>
+                  <FeeCardSkeleton />
+                  <FeeCardSkeleton />
+                  <FeeCardSkeleton />
+                </View>
+              ) : filteredStudents.length > 0 ? (
+                <>
+                  {overviewDisplayedStudents.map((student) => (
+                    <FeeStudentCard
+                      key={student.id}
+                      student={student}
+                      onPress={onStudentPress}
+                      onCollectPress={
+                        onCollectFeePress
+                          ? () => onCollectFeePress(student)
+                          : () => {
+                              const studentForCollect = {
+                                id: student.id,
+                                name: student.name,
+                                studentId: `ID: SA-2024-${(student.id || '1').toString().padStart(4, '0')}`,
+                                location: student.location || 'Batch',
+                                dueAmount: student.amount || '₹1,250',
+                                dueLabel: 'Due Amount',
+                              };
+                              router.push({
+                                pathname: '/(tabs)/fees/CollectFee' as any,
+                                params: { studentData: JSON.stringify(studentForCollect) },
+                              });
+                            }
                       }
-                    }}
-                    className="bg-[#FFFFFF] border border-primary-border rounded-[18px] px-4 py-2.5 justify-center items-center"
-                  >
-                    <Text className="text-[12px] font-urbanist-medium text-secondary tracking-tight">
-                      View All ({filteredStudents.length} Students)
-                    </Text>
-                  </TouchableOpacity>
+                    />
+                  ))}
+                  {filteredStudents.length > 5 && (
+                    <View className="py-2 flex-row items-center justify-end">
+                      <TouchableOpacity
+                        style={[styles.BlackInnerShadowStyle]}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          if (onViewAllStudents) {
+                            onViewAllStudents();
+                          } else {
+                            router.push('/(tabs)/fees/student-list' as any);
+                          }
+                        }}
+                        className="bg-[#FFFFFF] border border-primary-border rounded-[18px] px-4 py-2.5 justify-center items-center"
+                      >
+                        <Text className="text-[12px] font-urbanist-medium text-secondary tracking-tight">
+                          View All ({filteredStudents.length} Students)
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
+              ) : (
+                <View style={styles.BoxStyle} className="py-8 items-center justify-center">
+                  <View style={styles.IconStyle} className="mb-2 p-2.5">
+                    <Layer size={24} color="#8A8A8E" variant="Linear" />
+                  </View>
+                  <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
+                    No Students Found
+                  </Text>
+                  <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
+                    There are no students matching your selected filter.
+                  </Text>
                 </View>
               )}
-            </>
-          ) : (
-            <View style={styles.BoxStyle} className="py-8 items-center justify-center">
-              <View style={styles.IconStyle} className="mb-2 p-2.5">
-                <Layer size={24} color="#8A8A8E" variant="Linear" />
-              </View>
-              <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
-                No Students Found
-              </Text>
-              <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
-                There are no students matching your selected filter.
-              </Text>
             </View>
-          )}
-        </View>
 
-        {/* Recent Payments Section Header */}
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-[22px] font-urbanist-bold text-primary tracking-tight">
-            Recent Payments
-          </Text>
-
-          <BtnCom
-            label="View All"
-            onClick={() => {
-              if (onViewAllRecentPayments) {
-                onViewAllRecentPayments();
-              } else {
-                router.push('/(tabs)/fees/recent-payments' as any);
-              }
-            }}
-          />
-        </View>
-
-        {/* Recent Payment List */}
-        <View className="gap-3">
-          {recentPayments.length > 0 ? (
-            recentPayments.map((item) => (
-              <RecentPaymentCard key={item.id} item={item} />
-            ))
-          ) : (
-            <View style={styles.BoxStyle} className="py-8 items-center justify-center my-4">
-              <View style={styles.IconStyle} className="mb-2 p-2.5">
-                <User size={24} color="#8A8A8E" variant="Linear" />
-              </View>
-              <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
-                No Recent Fee Payments
+            {/* Recent Payments Section Header */}
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-[22px] font-urbanist-bold text-primary tracking-tight">
+                Recent Payments
               </Text>
-              <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
-                No payments have been received yet.
-              </Text>
+
+              <BtnCom
+                label="View All"
+                onClick={() => {
+                  if (onViewAllRecentPayments) {
+                    onViewAllRecentPayments();
+                  } else {
+                    router.push('/(tabs)/fees/recent-payments' as any);
+                  }
+                }}
+              />
             </View>
-          )}
-        </View>
+
+            {/* Recent Payment List */}
+            <View className="gap-3">
+              {recentPayments.length > 0 ? (
+                recentPayments.map((item) => (
+                  <RecentPaymentCard key={item.id} item={item} />
+                ))
+              ) : (
+                <View style={styles.BoxStyle} className="py-8 items-center justify-center my-4">
+                  <View style={styles.IconStyle} className="mb-2 p-2.5">
+                    <User size={24} color="#8A8A8E" variant="Linear" />
+                  </View>
+                  <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight">
+                    No Recent Fee Payments
+                  </Text>
+                  <Text className="text-[14px] font-urbanist-medium text-secondary mt-1 text-center">
+                    No payments have been received yet.
+                  </Text>
+                </View>
+              )}
+            </View>
+          </>
+        )}
       </Animated.ScrollView>
 
       <SortBottomSheet
@@ -374,6 +435,14 @@ export default function FeeOverview({
           setIsSortVisible(false);
         }}
         onClose={() => setIsSortVisible(false)}
+      />
+
+      {/* Export Fee Overview Modal */}
+      <ExportFeeOverviewModal
+        visible={isExportModalVisible}
+        isLoading={exportFeeOverviewMutation.isPending}
+        onClose={() => setIsExportModalVisible(false)}
+        onExport={handleExportReport}
       />
     </ScreenWrapper>
   );

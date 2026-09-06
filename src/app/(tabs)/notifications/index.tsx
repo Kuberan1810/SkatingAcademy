@@ -4,18 +4,16 @@ import Search from '@/components/ui/Search';
 import NotificationCard from '@/features/notifications/NotificationCard';
 import NotificationsFilter from '@/features/notifications/NotificationsFilter';
 import { Notification, NotificationFilter as FilterType } from '@/features/notifications/types';
+import styles from '@/styles/styles';
+import { useTabBarVisibility } from '@/context/tab-bar-visibility';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { SectionList, Text, View } from 'react-native';
-
-const MOCK_FILTERS: FilterType[] = [
-    { id: 'all', label: 'All' },
-    { id: 'unread', label: 'Unread', count: 2 },
-    { id: 'fees', label: 'Fees' },
-    { id: 'attendance', label: 'Attendance' },
-];
+import { NotificationBing } from 'iconsax-react-native';
+import React, { useState, useEffect } from 'react';
+import { BackHandler, SectionList, Text, View } from 'react-native';
 
 const MOCK_NOTIFICATIONS: Notification[] = [
+    /*
     {
         id: '1',
         type: 'fees',
@@ -56,15 +54,44 @@ const MOCK_NOTIFICATIONS: Notification[] = [
         timeAgo: 'Yesterday',
         isUnread: false,
     },
+    */
+];
+
+const unreadCount = MOCK_NOTIFICATIONS.filter((n) => n.isUnread).length;
+
+const FILTERS: FilterType[] = [
+    { id: 'all', label: 'All' },
+    { id: 'unread', label: 'Unread', ...(unreadCount > 0 ? { count: unreadCount } : {}) },
+    { id: 'fees', label: 'Fees' },
+    { id: 'attendance', label: 'Attendance' },
 ];
 
 export default function NotificationsScreen() {
+    const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
+    const { hideTabBar, showTabBar } = useTabBarVisibility();
+
+    useEffect(() => {
+        hideTabBar();
+        return () => {
+            showTabBar();
+        };
+    }, []);
 
     const filteredNotifications = MOCK_NOTIFICATIONS.filter((notif) => {
-        if (activeFilter === 'all') return true;
-        if (activeFilter === 'unread') return notif.isUnread;
-        return notif.type === activeFilter;
+        const matchesFilter =
+            activeFilter === 'all'
+                ? true
+                : activeFilter === 'unread'
+                ? notif.isUnread
+                : notif.type === activeFilter;
+
+        const matchesSearch = searchQuery.trim()
+            ? notif.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              notif.description.toLowerCase().includes(searchQuery.toLowerCase())
+            : true;
+
+        return matchesFilter && matchesSearch;
     });
 
     const groupedData = filteredNotifications.reduce((acc, curr) => {
@@ -86,12 +113,25 @@ export default function NotificationsScreen() {
     });
 
     const handleBack = () => {
+        try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch (e) {}
         if (router.canGoBack()) {
             router.back();
         } else {
-            router.push('/(tabs)/dashboard');
+            router.replace('/(tabs)/dashboard' as any);
         }
     };
+
+    useEffect(() => {
+        const onBackPress = () => {
+            handleBack();
+            return true;
+        };
+
+        const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+        return () => subscription.remove();
+    }, []);
 
     return (
         <View className="flex-1 bg-white">
@@ -101,14 +141,16 @@ export default function NotificationsScreen() {
                     title="Notifications"
                     showBack={true}
                     onBackPress={handleBack}
-
                 />
-                <Search placeholder="Search notifications..."
-                    className='mb-5'
+                <Search
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Search notifications..."
+                    className="mb-5"
                     showFilter={false}
                 />
                 <NotificationsFilter
-                    filters={MOCK_FILTERS}
+                    filters={FILTERS}
                     activeFilterId={activeFilter}
                     onFilterPress={setActiveFilter}
                 />
@@ -127,7 +169,22 @@ export default function NotificationsScreen() {
                             {title}
                         </Text>
                     )}
-                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 4 }}
+                    ListEmptyComponent={
+                        <View style={styles.BoxStyle} className="py-12 px-6 items-center justify-center mt-4">
+                            <View style={styles.IconStyle} className="w-14 h-14 rounded-2xl mb-3 items-center justify-center">
+                                <NotificationBing size={28} color="#8A8A8E" variant="Linear" />
+                            </View>
+                            <Text className="text-[18px] font-urbanist-semibold text-primary tracking-tight text-center">
+                                {searchQuery.trim() ? 'No matching notifications' : 'No notifications yet'}
+                            </Text>
+                            <Text className="text-[14px] font-urbanist-medium text-secondary mt-1.5 text-center max-w-[260px] leading-5">
+                                {searchQuery.trim()
+                                    ? 'Try searching with different keywords.'
+                                    : "You're all caught up! There are no new notifications at the moment."}
+                            </Text>
+                        </View>
+                    }
+                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 4, flexGrow: 1 }}
                     showsVerticalScrollIndicator={false}
                 />
             </ScreenWrapper>

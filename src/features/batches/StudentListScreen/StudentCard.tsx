@@ -7,6 +7,7 @@ import {
   ProfileTick,
   CalendarTick,
   CalendarRemove,
+  TickCircle,
 } from 'iconsax-react-native';
 import { EllipsisVertical } from 'lucide-react-native';
 import React from 'react';
@@ -47,6 +48,9 @@ export interface StudentCardProps {
   onPress?: (student: StudentListItem) => void;
   onMorePress?: (student: StudentListItem) => void;
   onCallPress?: (phone?: string) => void;
+  onLongPress?: (student: StudentListItem) => void;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
   style?: StyleProp<ViewStyle>;
   className?: string;
 }
@@ -56,6 +60,9 @@ function StudentCard({
   onPress,
   onMorePress,
   onCallPress,
+  onLongPress,
+  isSelectionMode = false,
+  isSelected = false,
   style,
   className = '',
 }: StudentCardProps) {
@@ -72,19 +79,24 @@ function StudentCard({
     student.attendanceRatioStatus === 'success' ||
     (!student.attendanceRatioStatus && isPaid);
 
-  // Extract ratio numbers e.g. "20/24" -> present: 20, total: 24
-  const ratioParts = (student.attendanceRatio || '20/24').split('/');
-  const presentCount = ratioParts[0] || '20';
-  const totalCount = ratioParts[1] || '24';
+  // Extract ratio numbers e.g. "20/24" -> present: 20, total: 24 (memoized)
+  const [presentCount, totalCount] = React.useMemo(() => {
+    const ratioParts = (student.attendanceRatio || '20/24').split('/');
+    return [ratioParts[0] || '20', ratioParts[1] || '24'];
+  }, [student.attendanceRatio]);
 
   return (
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={() => onPress?.(student)}
+      onLongPress={() => onLongPress?.(student)}
+      delayLongPress={250}
       style={[style]}
-      className={`p-4 border border-primary-border rounded-[28px] bg-white relative ${className}`}
+      className={`p-4 border rounded-[28px] relative ${
+        isSelected ? 'bg-[#EFF6FF] border-[#4186F7]' : 'bg-white border-primary-border'
+      } ${className}`}
     >
-      {/* Top Header Row: Joined Date Pill & 3-Dots Action Menu */}
+      {/* Top Header Row: Joined Date Pill & 3-Dots Action Menu / Checkbox */}
       <View className="flex-row items-center justify-between mb-4">
         {/* Date Pill */}
         <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FAFAFA] border border-primary-border gap-2.5">
@@ -94,14 +106,24 @@ function StudentCard({
           </Text>
         </View>
 
-        {/* 3-Dots More Button */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => onMorePress?.(student)}
-          className="p-[6px] rounded-[8px] bg-[#F4F4F6] border border-primary-border items-center justify-center"
-        >
-          <EllipsisVertical size={18} color={COLORS.secondary} />
-        </TouchableOpacity>
+        {/* 3-Dots More Button or Selection Checkbox */}
+        {isSelectionMode ? (
+          <View
+            className={`w-[26px] h-[26px] rounded-full items-center justify-center border ${
+              isSelected ? 'bg-[#4186F7] border-[#4186F7]' : 'bg-white border-[#CBD5E1]'
+            }`}
+          >
+            {isSelected && <TickCircle size={18} color="#FFFFFF" variant="Bold" />}
+          </View>
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onMorePress?.(student)}
+            className="p-[6px] rounded-[8px] bg-[#F4F4F6] border border-primary-border items-center justify-center"
+          >
+            <EllipsisVertical size={18} color={COLORS.secondary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Middle Row: Avatar / Initials Badge, Student Info & Phone Call Button */}

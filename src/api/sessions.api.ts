@@ -28,6 +28,8 @@ export interface SessionData {
   actual_end_time?: string | null;
   status: string;
   location: string;
+  is_compensation_class?: boolean;
+  compensation_reason?: string | null;
   students: SessionStudentItem[];
   created_at?: string;
   updated_at?: string;
@@ -56,6 +58,8 @@ export interface CompletedSessionDetails {
   total_count: number;
   present_count: number;
   absent_count: number;
+  is_compensation_class?: boolean;
+  compensation_reason?: string | null;
 }
 
 export interface CompletedSessionData {
@@ -83,6 +87,15 @@ export const sessionsApi = {
   ): Promise<CompletedSessionData> => {
     const response = await apiClient.get<CompletedSessionResponse>(
       ENDPOINTS.sessions.completed(sessionId)
+    );
+    return response.data.data;
+  },
+
+  getSessionDetail: async (
+    sessionId: number | string
+  ): Promise<SessionData> => {
+    const response = await apiClient.get<StartSessionResponse>(
+      ENDPOINTS.sessions.detail(sessionId)
     );
     return response.data.data;
   },

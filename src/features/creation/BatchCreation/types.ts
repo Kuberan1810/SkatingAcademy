@@ -1,7 +1,7 @@
 export interface BatchFormData {
   // Step 1: Batch Information
   batchName: string;
-  level: string;
+  level?: string;
   location: string;
   description: string;
 

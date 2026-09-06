@@ -1,6 +1,6 @@
 import apiClient from './client';
 import { ENDPOINTS } from './endpoints';
-import { CreateBatchRequest, Batch, BatchesPageData } from '@/types/batch';
+import { CreateBatchRequest, Batch, BatchesPageData, BatchStudentsData } from '@/types/batch';
 import { ApiResponse } from '@/types/api';
 
 export const batchesApi = {
@@ -97,4 +97,21 @@ export const batchesApi = {
     }
     return resData as Batch;
   },
+
+  /**
+   * GET /api/v1/batches/:batch_id/students
+   * Get list of students belonging to a specific batch.
+   */
+  getBatchStudents: async (batchId: number | string): Promise<BatchStudentsData> => {
+    const response = await apiClient.get<ApiResponse<BatchStudentsData> | BatchStudentsData>(
+      ENDPOINTS.batches.students(batchId)
+    );
+
+    const resData = response.data as any;
+    if (resData && typeof resData === 'object' && 'data' in resData) {
+      return resData.data;
+    }
+    return resData as BatchStudentsData;
+  },
 };
+

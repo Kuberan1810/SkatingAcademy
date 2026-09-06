@@ -3,39 +3,24 @@ import { TabBarVisibilityProvider, useTabBarVisibility } from '@/context/tab-bar
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname, useSegments } from 'expo-router';
 import { Add, Card, DocumentText, DocumentText1, Home2, Profile2User } from 'iconsax-react-native';
-import React, { useState } from 'react';
-import { LayoutAnimation, LogBox, Platform, TouchableOpacity, UIManager, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Platform, TouchableOpacity, View } from 'react-native';
 import Animated, {
-  Easing,
   FadeIn,
   FadeOut,
   LinearTransition,
   useAnimatedStyle,
-  useSharedValue,
-  withTiming,
 } from 'react-native-reanimated';
-
-LogBox.ignoreLogs([
-  'setLayoutAnimationEnabledExperimental',
-  'setLayoutAnimationEnabledExperimental is currently a no-op',
-]);
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  try {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  } catch (e) {
-    // Ignore in New Architecture
-  }
-}
 
 // Must be created OUTSIDE the component so it is never recreated on each render.
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: BottomTabBarProps & { onAddPress: () => void }) {
-  const { tabBarOffset, isTabBarVisible, showTabBar, hideTabBar } = useTabBarVisibility();
-  const [tabLayouts, setTabLayouts] = useState<{ [key: string]: { x: number; y: number; width: number; height: number } }>({});
+  const { tabBarOffset, showTabBar, hideTabBar } = useTabBarVisibility();
+  const pathname = usePathname();
+  const segments = useSegments();
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -45,48 +30,15 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
 
   const activeRoute = state.routes[state.index];
   const activeRouteKey = activeRoute?.key;
-  const activeRouteName = (activeRoute?.name || '').toLowerCase();
-  const activeLayout = tabLayouts[activeRouteKey];
-
-  // Shared values for the sliding indicator
-  const indicatorX = useSharedValue(0);
-  const indicatorY = useSharedValue(0);
-  const indicatorW = useSharedValue(0);
-  const indicatorH = useSharedValue(0);
-  const indicatorOpacity = useSharedValue(0);
-
-  React.useEffect(() => {
-    if (activeLayout) {
-      indicatorX.value = withTiming(activeLayout.x, { duration: 350, easing: Easing.out(Easing.exp) });
-      indicatorY.value = withTiming(activeLayout.y, { duration: 350, easing: Easing.out(Easing.exp) });
-      indicatorW.value = withTiming(activeLayout.width, { duration: 350, easing: Easing.out(Easing.exp) });
-      indicatorH.value = withTiming(activeLayout.height, { duration: 350, easing: Easing.out(Easing.exp) });
-      indicatorOpacity.value = withTiming(1, { duration: 200 });
-    } else {
-      indicatorOpacity.value = withTiming(0, { duration: 150 });
-    }
-  }, [activeLayout]);
-
-  const indicatorStyle = useAnimatedStyle(() => {
-    'worklet';
-    return {
-      position: 'absolute',
-      left: indicatorX.value,
-      top: indicatorY.value,
-      width: indicatorW.value,
-      height: indicatorH.value,
-      backgroundColor: 'rgba(255, 255, 255, 0.18)',
-      borderRadius: 30,
-      opacity: indicatorOpacity.value,
-    };
-  });
 
   // Strictly determine if the user is on one of the 4 main tab root screens
   const isStrictMainTabRoot = (() => {
-    // Top-level tab route name
-    const tabName = activeRoute?.name || '';
+    // If we are in auth group or on login screen, NEVER show tab bar
+    if (pathname?.includes('/login') || segments[0] === '(auth)') {
+      return false;
+    }
 
-    // Only these 4 top-level tab routes are valid
+    const tabName = activeRoute?.name || '';
     const isAllowedTab = [
       '(tabs)/dashboard',
       '(tabs)/batches',
@@ -98,15 +50,56 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
       return false;
     }
 
-    // Check if there is any nested stack navigation state (e.g. inside (tabs)/dashboard, (tabs)/batches, (tabs)/fees, (tabs)/students)
+    // Check nested stack navigation state
     if (activeRoute?.state) {
+      const nestedRoutes = activeRoute.state.routes;
       const nestedIndex = activeRoute.state.index ?? 0;
-      const nestedRoutes = activeRoute.state.routes || [];
-      const currentNestedRoute = nestedRoutes[nestedIndex];
-      const nestedRouteName = (currentNestedRoute?.name || '').toLowerCase();
+      if (nestedRoutes && nestedRoutes[nestedIndex]) {
+        const currentNestedName = nestedRoutes[nestedIndex].name;
+        const isAllowedNestedScreen = [
+          'index',
+          'StudentListScreen',
+          'student-list',
+        ].includes(currentNestedName);
+        if (!isAllowedNestedScreen) {
+          return false;
+        }
+      }
+    }
 
-      // If pushed into a subscreen (e.g. pending-fees, upcoming-sessions, StudentListScreen, completed-class, start-class, add, CollectFee, recent-payments, [id])
-      if (nestedIndex > 0 || (nestedRouteName && nestedRouteName !== 'index')) {
+    // Pathname check: verify we are not on any known subscreen
+    const cleanPath = (pathname || '').toLowerCase().replace(/\/$/, '');
+    const isSubScreen = [
+      '/add',
+      '/student-profile',
+      '/start-class',
+      '/completed-class',
+      '/search',
+      '/collectfee',
+      '/notifications',
+      '/reports',
+      '/settings',
+      '/login',
+    ].some((sub) => cleanPath.endsWith(sub) || cleanPath.includes(`${sub}/`));
+
+    if (isSubScreen) {
+      return false;
+    }
+
+    // Segments check: if the last segment is a subscreen or parameter
+    if (segments && segments.length > 0) {
+      const lastSegment = String(segments[segments.length - 1]);
+      const allowedSegments = [
+        'index',
+        '(tabs)',
+        'dashboard',
+        'batches',
+        'students',
+        'fees',
+        'StudentListScreen',
+        'student-list',
+      ];
+      if (lastSegment && !allowedSegments.includes(lastSegment)) {
         return false;
       }
     }
@@ -114,14 +107,14 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     return true;
   })();
 
-  // Ensure tab bar visibility state and position are perfectly synchronized with the route
-  React.useEffect(() => {
+  // Synchronize tab bar visibility with route safely
+  useEffect(() => {
     if (isStrictMainTabRoot) {
       showTabBar();
     } else {
       hideTabBar();
     }
-  }, [isStrictMainTabRoot, activeRouteKey, activeRoute?.state?.index]);
+  }, [isStrictMainTabRoot, activeRouteKey, showTabBar, hideTabBar]);
 
   if (!isStrictMainTabRoot) {
     return null;
@@ -140,27 +133,18 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
     const onPress = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      LayoutAnimation.configureNext({
-        duration: 500,
-        create: {
-          type: LayoutAnimation.Types.spring,
-          property: LayoutAnimation.Properties.opacity,
-          springDamping: 0.7,
-        },
-        update: {
-          type: LayoutAnimation.Types.spring,
-          springDamping: 0.7,
-        },
-      });
-
       const event = navigation.emit({
         type: 'tabPress',
         target: route.key,
         canPreventDefault: true,
       });
 
-      if (!isFocused && !event.defaultPrevented) {
-        navigation.navigate(route.name, route.params);
+      if (!event.defaultPrevented) {
+        navigation.navigate({
+          name: route.name,
+          params: { screen: 'index' },
+          merge: false,
+        } as any);
       }
     };
 
@@ -196,14 +180,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
         layout={LinearTransition.springify().damping(16).mass(0.6).stiffness(120)}
         onPress={onPress}
         onLongPress={onLongPress}
-        onLayout={(e) => {
-          const { x, y, width, height } = e.nativeEvent.layout;
-          setTabLayouts((prev) => ({
-            ...prev,
-            [route.key]: { x, y, width, height },
-          }));
-        }}
-        activeOpacity={1}
+        activeOpacity={0.75}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -211,6 +188,7 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
           paddingVertical: 10,
           paddingHorizontal: isFocused ? 14 : 10,
           borderRadius: 30,
+          backgroundColor: isFocused ? 'rgba(255, 255, 255, 0.18)' : 'transparent',
           zIndex: 2,
         }}
       >
@@ -290,9 +268,6 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
           />
         )}
 
-        {/* Sliding Indicator Background */}
-        <Animated.View style={indicatorStyle} />
-
         {tabContent}
       </View>
 
@@ -319,7 +294,6 @@ function CustomInstructorTabBar({ state, descriptors, navigation, onAddPress }: 
       >
         <Add size={30} color="#FFFFFF" variant="Linear" />
       </TouchableOpacity>
-
     </Animated.View>
   );
 }
@@ -332,7 +306,12 @@ export default function AppTabs() {
       <Tabs
         initialRouteName="(auth)/login"
         backBehavior="history"
-        tabBar={props => <CustomInstructorTabBar {...props as any} onAddPress={() => setQuickActionsVisible(true)} />}
+        tabBar={(props) => (
+          <CustomInstructorTabBar
+            {...(props as any)}
+            onAddPress={() => setQuickActionsVisible(true)}
+          />
+        )}
         screenOptions={{
           headerShown: false,
           animation: 'shift',
@@ -346,9 +325,13 @@ export default function AppTabs() {
 
         {/* Hidden Tabs / Screens */}
         <Tabs.Screen name="index" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/settings/index" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/settings/profile" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/settings/about" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/settings/app-settings" options={{ href: null }} />
+        <Tabs.Screen name="(tabs)/settings/help-faq" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/notifications/index" options={{ href: null }} />
         <Tabs.Screen name="(tabs)/reports/index" options={{ href: null }} />
-        <Tabs.Screen name="(tabs)/settings/index" options={{ href: null }} />
         <Tabs.Screen name="(auth)/login" options={{ href: null }} />
       </Tabs>
 

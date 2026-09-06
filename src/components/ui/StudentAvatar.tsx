@@ -24,13 +24,21 @@ const AVATAR_PALETTES = [
   { bg: '#FDF2F8', text: '#DB2777', border: '#FBCFE880' }, // Soft Pink
 ];
 
+const avatarColorCache = new Map<string, typeof AVATAR_PALETTES[0]>();
+
 export const getAvatarColor = (name: string) => {
+  if (!name) return AVATAR_PALETTES[0];
+  const cached = avatarColorCache.get(name);
+  if (cached) return cached;
+
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   const index = Math.abs(hash) % AVATAR_PALETTES.length;
-  return AVATAR_PALETTES[index];
+  const palette = AVATAR_PALETTES[index];
+  avatarColorCache.set(name, palette);
+  return palette;
 };
 
 export interface StudentAvatarProps {
@@ -41,7 +49,7 @@ export interface StudentAvatarProps {
   className?: string;
 }
 
-export default function StudentAvatar({
+function StudentAvatar({
   name,
   avatarUri,
   size = 40,
@@ -107,3 +115,6 @@ export default function StudentAvatar({
     </View>
   );
 }
+
+export default React.memo(StudentAvatar);
+

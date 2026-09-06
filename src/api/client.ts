@@ -1,7 +1,8 @@
 import axios from 'axios';
-import { getToken, clearAuthSession } from '@/store/auth-store';
+import { getToken, clearAuthSession, triggerAuthExpired } from '@/store/auth-store';
 
-export const API_BASE_URL = 'https://skatingacademybackend.onrender.com';
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL || 'https://skatingacademybackend.onrender.com';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -21,19 +22,20 @@ apiClient.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch {
-      // Proceed without token if error reading store
+      // Proceed without token if store access fails
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Global response handling for 401 Unauthorized
+// Global response handling for 401 Unauthorized and expired tokens
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
       await clearAuthSession();
+      triggerAuthExpired();
     }
     return Promise.reject(error);
   }

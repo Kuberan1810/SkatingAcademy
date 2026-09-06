@@ -113,4 +113,87 @@ export const studentsApi = {
     const response = await apiClient.delete(ENDPOINTS.students.delete(id));
     return response.data;
   },
+
+  /**
+   * POST /api/v1/students/bulk-delete
+   * Delete multiple students by IDs.
+   */
+  bulkDeleteStudents: async (studentIds: (number | string)[]): Promise<any> => {
+    const response = await apiClient.post(ENDPOINTS.students.bulkDelete, {
+      student_ids: studentIds.map((id) => Number(id)),
+    });
+    return response.data;
+  },
+
+  /**
+   * POST /api/v1/students/import/preview
+   * Upload file (XLSX, CSV, DOCX, TXT) and preview parsed student data.
+   */
+  previewStudentImport: async (file: {
+    uri: string;
+    name: string;
+    type?: string;
+  }): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: file.uri,
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+    } as any);
+
+    const response = await apiClient.post(
+      ENDPOINTS.students.importPreview,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    const resData = response.data as any;
+    if (resData && typeof resData === 'object' && 'data' in resData) {
+      return resData.data;
+    }
+    return resData;
+  },
+
+  /**
+   * POST /api/v1/students/import/text/preview
+   * Submit raw text for OCR / text parsing preview.
+   */
+  previewStudentImportText: async (text: string): Promise<any> => {
+    const response = await apiClient.post(
+      ENDPOINTS.students.importTextPreview,
+      text,
+      {
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+      }
+    );
+
+    const resData = response.data as any;
+    if (resData && typeof resData === 'object' && 'data' in resData) {
+      return resData.data;
+    }
+    return resData;
+  },
+
+  /**
+   * POST /api/v1/students/import/confirm
+   * Confirm student bulk import with batch_id and previewed students.
+   */
+  confirmStudentImport: async (payload: { batch_id: number; students: any[] }): Promise<any> => {
+    const response = await apiClient.post(
+      ENDPOINTS.students.importConfirm,
+      payload
+    );
+
+    const resData = response.data as any;
+    if (resData && typeof resData === 'object' && 'data' in resData) {
+      return resData.data;
+    }
+    return resData;
+  },
 };

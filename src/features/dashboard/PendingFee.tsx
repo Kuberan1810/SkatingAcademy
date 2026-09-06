@@ -17,6 +17,7 @@ export interface PendingFeeProps {
   studentsCountText?: string;
   fees?: PendingFeeItem[];
   tabs?: string[];
+  maxItems?: number;
   emptyText?: string;
   onViewAllPress?: () => void;
   onTabChange?: (tab: string) => void;
@@ -36,6 +37,7 @@ const DEFAULT_FEES: PendingFeeItem[] = [
     amount: '₹1,200',
     status: 'Overdue',
     phone: '+919600927801',
+    avatarSource: require('@/assets/images/home/userAvatar.svg'),
   },
   {
     id: '2',
@@ -45,6 +47,7 @@ const DEFAULT_FEES: PendingFeeItem[] = [
     amount: '₹2,500',
     status: 'Due Today',
     phone: '+917550364255',
+    avatarSource: require('@/assets/images/home/userAvatar.svg'),
   },
 ];
 
@@ -54,6 +57,7 @@ export default function PendingFee({
   studentsCountText = '7 students',
   fees = DEFAULT_FEES,
   tabs = ['All', 'Due Today', 'Overdue', 'Tomorrow'],
+  maxItems = 4,
   emptyText = 'No pending fees',
   onViewAllPress,
   onTabChange,
@@ -79,6 +83,8 @@ export default function PendingFee({
     if (activeFilter === 'Overdue') return fee.status?.toLowerCase().includes('overdue');
     return fee.status === activeFilter;
   });
+
+  const displayedFees = maxItems ? filteredFees.slice(0, maxItems) : filteredFees;
 
   const handleTabSelect = (tab: string) => {
     setActiveFilter(tab);
@@ -111,7 +117,7 @@ export default function PendingFee({
       };
 
       router.push({
-        pathname: '/(tabs)/fees/CollectFee' as any,
+        pathname: '/(tabs)/dashboard/CollectFee' as any,
         params: {
           studentData: JSON.stringify(studentForCollect),
           from: 'dashboard',
@@ -238,8 +244,8 @@ export default function PendingFee({
 
       {/* Pending Fee Cards / Empty State */}
       <View className="gap-5">
-        {filteredFees.length > 0 ? (
-          filteredFees.map((item) => (
+        {displayedFees.length > 0 ? (
+          displayedFees.map((item) => (
             <PendingFeeCard
               key={item.id}
               studentName={item.studentName}

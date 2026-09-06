@@ -4,7 +4,7 @@ import { User } from 'iconsax-react-native';
 import * as Haptics from 'expo-haptics';
 import FiltersTabs from '@/components/ui/FiltersTabs';
 import StudentCard, { StudentListItem } from '@/features/batches/StudentListScreen/StudentCard';
-import { StudentCardSkeleton } from '@/components/ui/Skeleton';
+import { StudentCardSkeleton, SkeletonGroup } from '@/components/ui/Skeleton';
 import styles from '@/styles/styles';
 
 export interface AllStudentsListProps {
@@ -13,8 +13,11 @@ export interface AllStudentsListProps {
   hasMore?: boolean;
   filterTabs?: string[];
   activeFilter?: string;
+  isSelectionMode?: boolean;
+  selectedIds?: Set<string>;
   onSelectFilter?: (tab: string) => void;
   onStudentPress?: (student: StudentListItem) => void;
+  onStudentLongPress?: (student: StudentListItem) => void;
   onCallPress?: (phone?: string) => void;
   onMorePress?: (student: StudentListItem) => void;
 }
@@ -25,8 +28,11 @@ function AllStudentsList({
   hasMore = false,
   filterTabs = ['All', 'Paid', 'Overdue'],
   activeFilter = 'All',
+  isSelectionMode = false,
+  selectedIds = new Set(),
   onSelectFilter,
   onStudentPress,
+  onStudentLongPress,
   onCallPress,
   onMorePress,
 }: AllStudentsListProps) {
@@ -38,6 +44,16 @@ function AllStudentsList({
       onStudentPress?.(student);
     },
     [onStudentPress]
+  );
+
+  const handleLongPress = useCallback(
+    (student: StudentListItem) => {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      } catch (e) {}
+      onStudentLongPress?.(student);
+    },
+    [onStudentLongPress]
   );
 
   const handleCall = useCallback(
@@ -87,18 +103,21 @@ function AllStudentsList({
       {/* List Container */}
       <View className="gap-3.5">
         {isLoading && students.length === 0 ? (
-          <View>
+          <SkeletonGroup>
             <StudentCardSkeleton />
             <StudentCardSkeleton />
             <StudentCardSkeleton />
-          </View>
+          </SkeletonGroup>
         ) : students.length > 0 ? (
           <>
             {students.map((student) => (
               <StudentCard
                 key={student.id}
                 student={student}
+                isSelectionMode={isSelectionMode}
+                isSelected={selectedIds.has(String(student.id))}
                 onPress={handlePress}
+                onLongPress={handleLongPress}
                 onCallPress={handleCall}
                 onMorePress={handleMore}
               />

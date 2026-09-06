@@ -23,6 +23,7 @@ import OptionPickerModal from './components/OptionPickerModal';
 import DatePickerModal from './components/DatePickerModal';
 import PhotoPickerModal from './components/PhotoPickerModal';
 import SuccessStudentModal from './components/SuccessStudentModal';
+import BulkImportModal from './components/BulkImportModal';
 import StepProgressBar from './components/StepProgressBar';
 import AvatarPicker from './components/AvatarPicker';
 import StepBasicInfo from './components/StepBasicInfo';
@@ -138,6 +139,7 @@ export default function AddStudentScreen({
   onReset,
   onPickAvatar,
   availableBatches,
+  initialImportModalOpen = false,
 }: AddStudentScreenProps) {
   const { hideTabBar, showTabBar } = useTabBarVisibility();
   const createStudentMutation = useCreateStudent();
@@ -178,6 +180,7 @@ export default function AddStudentScreen({
 
   // Current Step: 1 | 2 | 3
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(initialImportModalOpen);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [apiError, setApiError] = useState<string | null>(null);
   const [createdStudentData, setCreatedStudentData] = useState<Student | null>(null);
@@ -358,15 +361,11 @@ export default function AddStudentScreen({
       setCurrentStep(3);
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     }
-    // STEP 3 VALIDATION (Required: Phone Number, Monthly Fee)
+    // STEP 3 VALIDATION (Required: Phone Number)
     else {
       const cleanPhone = formData.phoneNumber.replace(/[^0-9]/g, '');
       if (!formData.phoneNumber.trim() || cleanPhone.length === 0) {
         setApiError('Please enter phone number');
-        return;
-      }
-      if (!formData.monthlyFee.trim() || parseNumericFee(formData.monthlyFee) === 0) {
-        setApiError('Please enter monthly fee');
         return;
       }
 
@@ -393,7 +392,7 @@ export default function AddStudentScreen({
         parent_name: formData.parentName.trim() || 'Parent',
         phone_number: phoneDigits,
         emergency_contact: emergencyDigits,
-        monthly_fee: parseNumericFee(formData.monthlyFee) || 1250,
+        monthly_fee: formData.monthlyFee ? parseNumericFee(formData.monthlyFee) : 0,
         avatar_uri: formData.avatarUri || null,
       };
 
@@ -458,8 +457,12 @@ export default function AddStudentScreen({
     } else {
       if (onBackPress) {
         onBackPress();
-      } else if (router.canGoBack()) {
-        router.back();
+      } else {
+        try {
+          if (router.canGoBack()) {
+            router.back();
+          }
+        } catch (e) {}
       }
     }
   };
@@ -510,11 +513,12 @@ export default function AddStudentScreen({
   const isFetchingDetail = isEditing && studentDetailQuery.isLoading;
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScreenWrapper>
+    <View className="flex-1 relative">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScreenWrapper>
         {/* TOP APP HEADER USING HEADER.TSX */}
         <Header
           variant="page"
@@ -522,7 +526,7 @@ export default function AddStudentScreen({
           showBack={true}
           onBackPress={handleHeaderBack}
           rightIcon={ImportSquare}
-          onRightPress={handleResetForm}
+          onRightPress={() => setIsImportModalOpen(true)}
         />
 
         {isFetchingDetail ? (
@@ -719,10 +723,10 @@ export default function AddStudentScreen({
                     bloodGroup: createdStudentData?.blood_group || formData.bloodGroup || 'O+',
                   },
                   feeInfo: {
-                    monthlyFee: createdStudentData?.monthly_fee
+                    monthlyFee: createdStudentData?.monthly_fee !== undefined
                       ? `₹${createdStudentData.monthly_fee}`
-                      : formData.monthlyFee || '₹1,250',
-                    pending: '₹1,250',
+                      : formData.monthlyFee || '₹0',
+                    pending: '₹0',
                     status: 'PENDING',
                   },
                 }),
@@ -734,12 +738,44 @@ export default function AddStudentScreen({
             onSubmit?.(formData);
             if (onBackPress) {
               onBackPress();
-            } else if (router.canGoBack()) {
-              router.back();
+            } else {
+              try {
+                if (router.canGoBack()) {
+                  router.back();
+                }
+              } catch (e) {}
+            }
+          }}
+        />
+
+        {/* BULK STUDENT IMPORT MODAL */}
+        <BulkImportModal
+          visible={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={(batchId, batchName) => {
+            setIsImportModalOpen(false);
+            if (batchId) {
+              try {
+                router.push({
+                  pathname: '/(tabs)/batches/StudentListScreen',
+                  params: { id: batchId, title: batchName, from: 'students' },
+                } as any);
+              } catch (e) {
+                if (onBackPress) onBackPress();
+              }
+            } else if (onBackPress) {
+              onBackPress();
+            } else {
+              try {
+                if (router.canGoBack()) {
+                  router.back();
+                }
+              } catch (e) {}
             }
           }}
         />
       </ScreenWrapper>
     </KeyboardAvoidingView>
-  );
+  </View>
+);
 }

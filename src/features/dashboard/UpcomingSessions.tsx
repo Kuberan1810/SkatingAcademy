@@ -6,9 +6,13 @@ import FiltersTabs from '@/components/ui/FiltersTabs';
 import BtnCom from '@/components/ui/BtnCom';
 import UpcomingSessionsCard, { UpcomingSessionsCardProps } from '@/components/ui/UpcomingSessionsCard';
 import styles from '@/styles/styles';
+import { useStartSession } from '@/hooks/use-sessions';
+import { getErrorMessage } from '@/utils/error';
+import Toast from '@/components/ui/Toast';
 
 export interface UpcomingSessionItem extends UpcomingSessionsCardProps {
   id: string;
+  batchId?: number;
   timeOfDay?: 'Morning' | 'Afternoon' | 'Evening';
 }
 
@@ -23,28 +27,16 @@ export interface UpcomingSessionsProps {
   className?: string;
 }
 
-const DEFAULT_SESSIONS: UpcomingSessionItem[] = [
-  {
-    id: '1',
-    title: 'Don Bosco',
-    time: '9:00 - 10:00 am',
-    studentsCount: '24 Students',
-    status: 'completed',
-    timeOfDay: 'Morning',
-  },
-  {
-    id: '2',
-    title: 'Sathya Stadium',
-    time: '12:00 - 01:00 am',
-    studentsCount: '18 Students',
-    status: 'start',
-    timeOfDay: 'Afternoon',
-  },
-];
+const getFormattedTodayDate = (): string => {
+  const d = new Date();
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}, ${d.getFullYear()}`;
+};
 
 export default function UpcomingSessions({
-  date = 'Friday, 15 Jan, 2024',
-  sessions = DEFAULT_SESSIONS,
+  date,
+  sessions = [],
   emptyText = 'No classes',
   onViewAllPress,
   onSessionPress,
@@ -52,7 +44,16 @@ export default function UpcomingSessions({
   style,
   className = '',
 }: UpcomingSessionsProps) {
+  const displayDate = date || getFormattedTodayDate();
   const [activeFilter, setActiveFilter] = useState('All');
+  const [startingSessionId, setStartingSessionId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type?: 'success' | 'error' | 'info' | 'delete' }>({
+    visible: false,
+    message: '',
+    type: 'error',
+  });
+
+  const startSessionMutation = useStartSession();
 
   const handleViewAll = () => {
     if (onViewAllPress) {
@@ -63,38 +64,92 @@ export default function UpcomingSessions({
   };
 
   const filteredSessions = sessions.filter((session) => {
+    const statusLower = (session.status || '').toLowerCase();
+    const isNoClass = statusLower === 'no_class' || statusLower === 'noclass' || statusLower === 'no class';
+    const isCompleted = statusLower === 'completed' || statusLower.includes('complete');
+
     if (activeFilter === 'All') return true;
+    if (activeFilter === 'Completed') return isCompleted;
+    if (activeFilter === 'No Class') return isNoClass;
     return session.timeOfDay === activeFilter;
   });
+
+  const triggerStartSession = (session: UpcomingSessionItem) => {
+    const statusLower = (session.status || '').toLowerCase();
+    if (statusLower === 'completed' || statusLower.includes('complete')) {
+      router.push({
+        pathname: '/(tabs)/dashboard/completed-class',
+        params: {
+          sessionId: session.id,
+          id: session.id,
+          title: session.title,
+          batchName: session.title,
+          from: 'dashboard',
+        },
+      } as any);
+      return;
+    }
+
+    const batchIdNum = session.batchId || Number(session.id);
+    setStartingSessionId(session.id);
+
+    if (!isNaN(batchIdNum) && batchIdNum > 0) {
+      startSessionMutation.mutate(
+        { batch_id: batchIdNum },
+        {
+          onSuccess: (sessionData) => {
+            setStartingSessionId(null);
+            router.push({
+              pathname: '/(tabs)/dashboard/start-class',
+              params: {
+                batchId: String(batchIdNum),
+                title: session.title,
+                sessionId: sessionData?.id ? String(sessionData.id) : undefined,
+                sessionData: JSON.stringify(sessionData),
+                from: 'dashboard',
+              },
+            } as any);
+          },
+          onError: (err) => {
+            setStartingSessionId(null);
+            const msg = getErrorMessage(err, 'Failed to start class session');
+            setToast({ visible: true, message: msg, type: 'error' });
+          },
+        }
+      );
+    } else {
+      setStartingSessionId(null);
+      router.push({
+        pathname: '/(tabs)/dashboard/start-class',
+        params: { title: session.title, from: 'dashboard' },
+      } as any);
+    }
+  };
 
   const handleStatusPress = (session: UpcomingSessionItem) => {
     if (onStatusPress) {
       onStatusPress(session);
     } else {
-      const statusLower = (session.status || '').toLowerCase();
-      if (statusLower === 'completed' || statusLower.includes('complete')) {
-        router.push('/(tabs)/dashboard/completed-class' as any);
-      } else {
-        router.push('/(tabs)/dashboard/start-class' as any);
-      }
+      triggerStartSession(session);
     }
   };
 
   const handleSessionPress = (session: UpcomingSessionItem) => {
     if (onSessionPress) {
       onSessionPress(session);
-    } else {
-      const statusLower = (session.status || '').toLowerCase();
-      if (statusLower === 'completed' || statusLower.includes('complete')) {
-        router.push('/(tabs)/dashboard/completed-class' as any);
-      } else {
-        router.push('/(tabs)/dashboard/start-class' as any);
-      }
     }
   };
 
   return (
     <View style={style} className={`mt-[30px] ${className}`}>
+      {/* Toast Notification */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onDismiss={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
+
       {/* Header Row: Title & Date + View All Button */}
       <View className="flex-row items-center justify-between mb-5">
         <View className="flex-1 mr-3">
@@ -102,7 +157,7 @@ export default function UpcomingSessions({
             Upcoming Sessions
           </Text>
           <Text className="text-[16px] font-urbanist-medium text-secondary mt-1">
-            {date}
+            {displayDate}
           </Text>
         </View>
 
@@ -111,17 +166,17 @@ export default function UpcomingSessions({
 
       {/* Filter Tabs */}
       <FiltersTabs
-        tabs={['All', 'Morning', 'Afternoon', 'Evening']}
+        tabs={['All', 'Morning', 'Afternoon', 'Evening', 'Completed', 'No Class']}
         activeTab={activeFilter}
         onSelectTab={setActiveFilter}
-        scrollable={false}
+        scrollable={true}
         containerClassName="mb-4"
       />
 
       {/* Reusable Upcoming Sessions Cards */}
       <View className="gap-3.5">
         {filteredSessions.length > 0 ? (
-          filteredSessions.map((session) => (
+          filteredSessions.slice(0, 3).map((session) => (
             <UpcomingSessionsCard
               key={session.id}
               title={session.title}
@@ -129,7 +184,8 @@ export default function UpcomingSessions({
               studentsCount={session.studentsCount}
               status={session.status}
               statusLabel={session.statusLabel}
-              onPressCard={() => handleSessionPress(session)}
+              loading={startingSessionId === session.id}
+              onPressCard={onSessionPress ? () => handleSessionPress(session) : undefined}
               onStatusPress={() => handleStatusPress(session)}
             />
           ))
@@ -150,5 +206,3 @@ export default function UpcomingSessions({
     </View>
   );
 }
-
-

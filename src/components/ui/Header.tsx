@@ -87,7 +87,7 @@ export function FigmaIconButton({
 
 export default function Header({
     variant = 'profile',
-    userName = 'Rajesh Kannan',
+    userName = 'Instructor',
     greeting = 'Welcome',
     avatarSource = DEFAULT_AVATAR,
     title,

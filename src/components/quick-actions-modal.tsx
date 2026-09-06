@@ -1,8 +1,19 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Animated,
+  Dimensions,
+  Modal,
+  PanResponder,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
-import { ClipboardText, DocumentText1, NotificationBing, Teacher } from 'iconsax-react-native';
+import { Layer, UserAdd, ImportSquare } from 'iconsax-react-native';
 import { ChevronRight, X } from 'lucide-react-native';
-import React from 'react';
-import { Animated, Dimensions, PanResponder, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import BulkImportModal from '@/features/creation/studentCreation/components/BulkImportModal';
 
 interface QuickActionsModalProps {
   visible: boolean;
@@ -13,63 +24,57 @@ const { height } = Dimensions.get('window');
 
 const ACTION_ITEMS = [
   {
-    id: 'assignment',
-    title: 'Assignment',
-    description: 'Create a new assignment for students.',
-    icon: ClipboardText,
+    id: 'create_batch',
+    title: 'Create Batch',
+    description: 'Schedule and setup a new training batch.',
+    icon: Layer,
+    color: '#F97316', // Orange
+    bgColor: '#FFF7ED',
+  },
+  {
+    id: 'add_student',
+    title: 'Add Student',
+    description: 'Register a new student with full details.',
+    icon: UserAdd,
     color: '#3B82F6', // Blue
     bgColor: '#EFF6FF',
   },
   {
-    id: 'test',
-    title: 'Test',
-    description: 'Set up a new test or quiz.',
-    icon: Teacher,
-    color: '#F59E0B', // Orange
-    bgColor: '#FEF3C7',
-  },
-  {
-    id: 'resources',
-    title: 'Resources',
-    description: 'Upload new study materials.',
-    icon: DocumentText1,
-    color: '#8B5CF6', // Purple
-    bgColor: '#F5F3FF',
-  },
-  {
-    id: 'announcement',
-    title: 'Announcement',
-    description: 'Broadcast a message to the class.',
-    icon: NotificationBing,
-    color: '#F97316', // Orange/Peach
-    bgColor: '#FFF7ED',
+    id: 'import_student',
+    title: 'Import Student',
+    description: 'Bulk import students via CSV, Excel, or Text.',
+    icon: ImportSquare,
+    color: '#10B981', // Emerald Green
+    bgColor: '#ECFDF5',
   },
 ];
 
 export default function QuickActionsModal({ visible, onClose }: QuickActionsModalProps) {
-  const [showModal, setShowModal] = React.useState(visible);
-  const slideAnim = React.useRef(new Animated.Value(height)).current;
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const [showModal, setShowModal] = useState(visible);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const slideAnim = useRef(new Animated.Value(height)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const panResponder = React.useRef(
+  const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onStartShouldSetPanResponderCapture: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 8 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+        return gestureState.dy > 4 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 15 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+        return gestureState.dy > 4 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
+      onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dy > 0) {
           slideAnim.setValue(gestureState.dy);
-          const opacity = Math.max(0, 1 - (gestureState.dy / (height / 2)));
+          const opacity = Math.max(0, 1 - gestureState.dy / (height / 2));
           fadeAnim.setValue(opacity);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 60 || gestureState.vy > 0.3) {
+        if (gestureState.dy > 50 || gestureState.vy > 0.3) {
           Animated.parallel([
             Animated.spring(slideAnim, {
               toValue: height,
@@ -83,7 +88,7 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
               toValue: 0,
               duration: 150,
               useNativeDriver: true,
-            })
+            }),
           ]).start(() => {
             onClose();
           });
@@ -98,14 +103,28 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
               toValue: 1,
               duration: 200,
               useNativeDriver: true,
-            })
+            }),
           ]).start();
         }
+      },
+      onPanResponderTerminate: () => {
+        Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 6,
+          }),
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
       },
     })
   ).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (visible) {
       setShowModal(true);
       slideAnim.setValue(height);
@@ -122,7 +141,7 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
           toValue: 1,
           duration: 250,
           useNativeDriver: true,
-        })
+        }),
       ]).start();
     } else {
       Animated.parallel([
@@ -135,76 +154,101 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
           toValue: 0,
           duration: 250,
           useNativeDriver: true,
-        })
+        }),
       ]).start(() => setShowModal(false));
     }
   }, [visible]);
 
-  if (!showModal) return null;
+  if (!showModal && !isBulkImportOpen) return null;
 
   return (
-    <View style={styles.overlayWrapper}>
-      <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
-        <TouchableOpacity
-          style={styles.backdropTouch}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-      </Animated.View>
-
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={[
-          styles.modalContainer,
-          { transform: [{ translateY: slideAnim }] }
-        ]}
+    <>
+      <Modal
+        visible={showModal}
+        transparent
+        statusBarTranslucent
+        animationType="none"
+        onRequestClose={onClose}
       >
-        <View style={styles.dragArea}>
-          <View style={styles.dragHandle} />
-        </View>
-
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Quick Actions</Text>
-            <Text style={styles.subtitle}>What would you like to create?</Text>
-          </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <X size={18} color="#6B7280" strokeWidth={2.5} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.listContainer}>
-          {ACTION_ITEMS.map((item) => (
+        <View style={styles.overlayWrapper}>
+          <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
             <TouchableOpacity
-              key={item.id}
-              style={styles.actionItem}
-              activeOpacity={0.7}
-              onPress={() => {
-                onClose();
-                if (item.id === 'test') {
-                  router.push('/(tabs)/batches/index' as any);
-                } else if (item.id === 'assignment') {
-                  router.push('/(tabs)/students/index' as any);
-                } else if (item.id === 'announcement') {
-                  router.push('/(tabs)/notifications/index' as any);
-                } else if (item.id === 'resources') {
-                  router.push('/(tabs)/reports/index' as any);
-                }
-              }}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: item.bgColor }]}>
-                <item.icon size={22} color={item.color} variant="Linear" />
+              style={styles.backdropTouch}
+              activeOpacity={1}
+              onPress={onClose}
+            />
+          </Animated.View>
+
+          <Animated.View
+            {...panResponder.panHandlers}
+            style={[
+              styles.modalContainer,
+              { transform: [{ translateY: slideAnim }] },
+            ]}
+          >
+            <View style={styles.dragArea}>
+              <View style={styles.dragHandle} />
+            </View>
+
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.title}>Quick Actions</Text>
+                <Text style={styles.subtitle}>What would you like to create?</Text>
               </View>
-              <View style={styles.textContainer}>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                <Text style={styles.itemDescription}>{item.description}</Text>
-              </View>
-              <ChevronRight size={16} color="#D1D5DB" strokeWidth={2} />
-            </TouchableOpacity>
-          ))}
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <X size={18} color="#6B7280" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.listContainer}>
+              {ACTION_ITEMS.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.actionItem}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    onClose();
+                    if (item.id === 'create_batch') {
+                      router.push('/(tabs)/batches/add' as any);
+                    } else if (item.id === 'add_student') {
+                      router.push('/(tabs)/students/add' as any);
+                    } else if (item.id === 'import_student') {
+                      setIsBulkImportOpen(true);
+                    }
+                  }}
+                >
+                  <View style={[styles.iconContainer, { backgroundColor: item.bgColor }]}>
+                    <item.icon size={22} color={item.color} variant="Linear" />
+                  </View>
+                  <View style={styles.textContainer}>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    <Text style={styles.itemDescription}>{item.description}</Text>
+                  </View>
+                  <ChevronRight size={16} color="#D1D5DB" strokeWidth={2} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Animated.View>
         </View>
-      </Animated.View>
-    </View>
+      </Modal>
+
+      {/* Bulk Student Import Modal */}
+      <BulkImportModal
+        visible={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onSuccess={(batchId, batchName) => {
+          setIsBulkImportOpen(false);
+          if (batchId) {
+            try {
+              router.push({
+                pathname: '/(tabs)/batches/StudentListScreen',
+                params: { id: batchId, title: batchName, from: 'students' },
+              } as any);
+            } catch (e) {}
+          }
+        }}
+      />
+    </>
   );
 }
 

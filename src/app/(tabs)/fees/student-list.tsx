@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
 import Search from '@/components/ui/Search';
@@ -26,7 +26,13 @@ const SORT_OPTIONS: SortOptionItem[] = [
 export type FeeFilterTab = 'All' | 'Paid' | 'Unpaid' | 'Overdue';
 
 export default function FeeStudentListScreen() {
-  const { handleScroll } = useTabBarVisibility();
+  const { showTabBar, handleScroll } = useTabBarVisibility();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      showTabBar();
+    }, [showTabBar])
+  );
   const { data: feeData, isLoading } = useFeesPage();
 
   const [searchQuery, setSearchQuery] = useState('');

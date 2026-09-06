@@ -210,7 +210,7 @@ export default function CreateBatchScreen({
 
   const [formData, setFormData] = useState<BatchFormData>({
     batchName: initialValues?.batchName || '',
-    level: initialValues?.level || '',
+    level: initialValues?.level || 'Basic',
     location: initialValues?.location || '',
     description: initialValues?.description || '',
 
@@ -416,10 +416,6 @@ export default function CreateBatchScreen({
         setApiError('Please enter a batch name');
         return;
       }
-      if (!formData.level.trim()) {
-        setApiError('Please select a level');
-        return;
-      }
       if (!formData.location.trim()) {
         setApiError('Please enter a location');
         return;
@@ -462,9 +458,9 @@ export default function CreateBatchScreen({
 
       const payload: CreateBatchRequest = {
         batch_name: formData.batchName.trim(),
-        level: formData.level.trim(),
+        level: formData.level?.trim() || 'Basic',
         location: formData.location.trim(),
-        description: formData.description?.trim() || `${formData.level} skating training program`,
+        description: formData.description?.trim() || `${formData.batchName} skating training program`,
         class_type: formData.classType,
         training_days: mappedDays,
         start_time: formatTimeTo24Hour(formData.startTime),
@@ -544,7 +540,7 @@ export default function CreateBatchScreen({
 
     setFormData({
       batchName: '',
-      level: '',
+      level: 'Basic',
       location: '',
       description: '',
       classType: 'Weekend',
@@ -701,19 +697,6 @@ export default function CreateBatchScreen({
         )}
 
         {/* BOTTOM MODAL PICKERS */}
-        {/* Level Dropdown Modal */}
-        <OptionPickerModal
-          visible={activePicker === 'level'}
-          title="Select Level"
-          options={availableLevels}
-          selectedValue={formData.level}
-          onSelect={(val) => {
-            updateField('level', val);
-            setActivePicker(null);
-          }}
-          onClose={() => setActivePicker(null)}
-        />
-
         {/* Class Type Dropdown Modal */}
         <OptionPickerModal
           visible={activePicker === 'classType'}

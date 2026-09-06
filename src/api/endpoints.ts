@@ -10,6 +10,8 @@ export const ENDPOINTS = {
     overview: "/api/v1/dashboard",
   },
 
+  search: "/api/v1/search",
+
   batches: {
     list: "/api/v1/batches",
     page: "/api/v1/batches-page",
@@ -36,8 +38,11 @@ export const ENDPOINTS = {
       `/api/v1/students/${id}`,
     delete: (id: number | string) =>
       `/api/v1/students/${id}`,
+    bulkDelete: "/api/v1/students/bulk-delete",
     importPreview:
       "/api/v1/students/import/preview",
+    importTextPreview:
+      "/api/v1/students/import/text/preview",
     importConfirm:
       "/api/v1/students/import/confirm",
   },
@@ -56,16 +61,25 @@ export const ENDPOINTS = {
       `/api/v1/sessions/${id}/completed`,
   },
 
+  schedule: {
+    compensation: "/api/v1/schedule/compensation",
+  },
+
   fees: {
     page: "/api/v1/fees/page",
+    pendingFees: "/api/v1/pending-fees",
     payments: "/api/v1/fees/payments",
     collect: "/api/v1/fees/collect",
   },
 
   reports: {
     students: "/api/v1/reports/students",
+    studentsExport: "/api/v1/reports/students/export",
+    singleStudentExport: (studentId: number | string) =>
+      `/api/v1/reports/students/${studentId}/export`,
     batches: "/api/v1/reports/batches",
     fees: "/api/v1/reports/fees",
+    feesOverviewExport: "/api/v1/reports/fees/overview/export",
     attendance: "/api/v1/reports/attendance",
   },
 

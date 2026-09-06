@@ -16,6 +16,7 @@ import {
   Edit,
   Profile2User,
   Trash,
+  CalendarAdd,
 } from 'iconsax-react-native';
 import * as Haptics from 'expo-haptics';
 import { COLORS } from '@/styles/styles';
@@ -35,6 +36,7 @@ export interface BatchOptionsBottomSheetProps {
   visible: boolean;
   batch?: BatchItemData | null;
   onClose: () => void;
+  onScheduleExtraClass?: (batch: BatchItemData) => void;
   onViewDetails?: (batch: BatchItemData) => void;
   onEditBatch?: (batch: BatchItemData) => void;
   onManageAttendance?: (batch: BatchItemData) => void;
@@ -45,6 +47,7 @@ export default function BatchOptionsBottomSheet({
   visible,
   batch,
   onClose,
+  onScheduleExtraClass,
   onViewDetails,
   onEditBatch,
   onManageAttendance,
@@ -149,6 +152,16 @@ export default function BatchOptionsBottomSheet({
   if (!showModal) return null;
 
   const options = [
+    {
+      id: 'extra_class',
+      title: 'Schedule Extra Class',
+      icon: CalendarAdd,
+      isDanger: false,
+      onPress: () => {
+        onClose();
+        if (batch) onScheduleExtraClass?.(batch);
+      },
+    },
     {
       id: 'view',
       title: 'View Details',

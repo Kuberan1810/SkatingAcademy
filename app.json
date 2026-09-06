@@ -36,11 +36,18 @@
       ],
       "expo-image",
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2880d1e8-2a87-48e7-a153-e034cf026bed"
+      }
     }
   }
 }

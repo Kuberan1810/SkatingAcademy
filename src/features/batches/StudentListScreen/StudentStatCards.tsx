@@ -9,7 +9,7 @@ export interface StudentStatCardsProps {
   className?: string;
 }
 
-export default function StudentStatCards({
+function StudentStatCards({
   totalStudents = '90 Students',
   avgAttendance = '92%',
   style,
@@ -57,3 +57,6 @@ export default function StudentStatCards({
     </View>
   );
 }
+
+export default React.memo(StudentStatCards);
+

@@ -17,12 +17,16 @@ export interface StudentSummaryCardProps {
 export default function StudentSummaryCard({
   name,
   joinedDate,
-  location = 'Sathya Stadium',
-  attendancePercent = '92%',
+  location,
+  attendancePercent,
   avatar,
   style,
   className = '',
 }: StudentSummaryCardProps) {
+  const displayJoinedDate = joinedDate && joinedDate.trim() ? joinedDate : 'Not Provided';
+  const displayLocation = location && location.trim() ? location : 'Not Assigned';
+  const displayAttendance = attendancePercent && attendancePercent.trim() ? attendancePercent : '0%';
+
   return (
     <View
       style={[style]}
@@ -33,7 +37,7 @@ export default function StudentSummaryCard({
         <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FAFAFA] border border-primary-border gap-2.5">
           <Calendar size={18} color={COLORS.secondary} variant="Linear" />
           <Text className="text-[14px] font-urbanist-medium text-secondary tracking-tight">
-            Joined · {joinedDate}
+            Joined · {displayJoinedDate}
           </Text>
         </View>
       </View>

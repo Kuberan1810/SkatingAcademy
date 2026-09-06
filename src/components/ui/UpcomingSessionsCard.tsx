@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleProp,
   ViewStyle,
+  ActivityIndicator,
 } from 'react-native';
 import { Clock, Profile2User } from 'iconsax-react-native';
 import styles from '@/styles/styles';
@@ -30,6 +31,8 @@ export interface UpcomingSessionsCardProps {
   style?: StyleProp<ViewStyle>;
   /** Custom Tailwind class for container */
   className?: string;
+  /** Loading state for status action button */
+  loading?: boolean;
 }
 
 /**
@@ -39,38 +42,56 @@ export function StatusPillButton({
   status = 'start',
   label,
   onPress,
+  loading = false,
 }: {
   status?: SessionStatusVariant;
   label?: string;
   onPress?: () => void;
+  loading?: boolean;
 }) {
-  const normalizedStatus = status.toLowerCase();
+  const normalizedStatus = (status || 'start').toLowerCase();
 
   const isCompleted = normalizedStatus === 'completed';
-  const isStart = normalizedStatus === 'start';
+  const isNoClass = normalizedStatus === 'no_class' || normalizedStatus === 'noclass';
 
   // Format display label
   const displayLabel =
     label ||
-    (isCompleted ? 'Completed' : isStart ? 'Start' : status);
+    (isCompleted ? 'Completed' : isNoClass ? 'No Class' : 'Start');
 
-  // Colors matching Figma specs (#02763D for completed, #0E0E0E for start)
+  // Colors matching specs (#02763D for completed, #F4F4F6 for no_class, #0E0E0E for start)
   const bgColor = isCompleted
     ? '#02763D'
-    : isStart
-    ? '#0E0E0E'
+    : isNoClass
+    ? '#F4F4F6'
     : '#0E0E0E';
+
+  const textColor = isNoClass ? '#8A8A8E' : '#FFFFFF';
 
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      onPress={onPress}
-      style={[{ backgroundColor: bgColor }, styles.InnerShadowStyle]}
+      disabled={loading || isNoClass}
+      onPress={isNoClass ? undefined : onPress}
+      style={[
+        {
+          backgroundColor: bgColor,
+          opacity: loading || isNoClass ? 0.7 : 1,
+        },
+        styles.InnerShadowStyle,
+      ]}
       className="px-[18px] py-[10px] rounded-[14px] flex-row items-center justify-center self-center"
     >
-      <Text className="text-[13px] font-urbanist-semibold text-white tracking-tight">
-        {displayLabel}
-      </Text>
+      {loading ? (
+        <ActivityIndicator size="small" color={textColor} />
+      ) : (
+        <Text
+          style={{ color: textColor }}
+          className="text-[13px] font-urbanist-semibold tracking-tight"
+        >
+          {displayLabel}
+        </Text>
+      )}
     </TouchableOpacity>
   );
 }
@@ -85,13 +106,16 @@ export default function UpcomingSessionsCard({
   onPressCard,
   style,
   className = '',
+  loading = false,
 }: UpcomingSessionsCardProps) {
   const formattedStudents =
     typeof studentsCount === 'number'
       ? `${studentsCount} Students`
-      : studentsCount.includes('Student')
-      ? studentsCount
-      : `${studentsCount} Students`;
+      : typeof studentsCount === 'string'
+      ? studentsCount.includes('Student')
+        ? studentsCount
+        : `${studentsCount} Students`
+      : `${studentsCount ?? 0} Students`;
 
   const LeftContainer = onPressCard ? TouchableOpacity : View;
 
@@ -112,9 +136,9 @@ export default function UpcomingSessionsCard({
         </Text>
 
         {/* Metadata Row: Time & Student Count */}
-        <View className="flex-row items-center justify-between flex-wrap">
+        <View className="flex-row items-center gap-2.5 flex-wrap">
           {/* Time */}
-          <View className="flex-row items-center gap-1.5">
+          <View className="flex-row items-center gap-2">
             <View style={styles.IconStyle}>
               <Clock size={14} color="#626262" variant="Linear" />
             </View>
@@ -124,7 +148,7 @@ export default function UpcomingSessionsCard({
           </View>
 
           {/* Students Count */}
-          <View className="flex-row items-center gap-1.5">
+          <View className="flex-row items-center gap-2">
             <View style={styles.IconStyle}>
               <Profile2User size={14} color="#626262" variant="Linear" />
             </View>
@@ -139,6 +163,7 @@ export default function UpcomingSessionsCard({
       <StatusPillButton
         status={status}
         label={statusLabel}
+        loading={loading}
         onPress={onStatusPress}
       />
     </View>

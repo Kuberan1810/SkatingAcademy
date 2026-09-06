@@ -7,7 +7,8 @@ export const BATCH_QUERY_KEYS = {
   all: ['batches'] as const,
   list: ['batches', 'list'] as const,
   page: ['batches', 'page'] as const,
-  detail: (id: number | string) => ['batches', 'detail', id] as const,
+  detail: (id: number | string) => ['batches', 'detail', String(id)] as const,
+  students: (id: number | string) => ['batches', 'students', String(id)] as const,
 };
 
 /**
@@ -75,7 +76,9 @@ export function useBatchesPage(enabled = true) {
       return await batchesApi.getBatchesPage();
     },
     enabled,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -90,6 +93,8 @@ export function useBatchesList(enabled = true) {
     },
     enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -97,12 +102,69 @@ export function useBatchesList(enabled = true) {
  * TanStack Query hook for fetching a single batch detail by ID.
  */
 export function useBatchDetail(id: number | string, enabled = true) {
+  const normId = String(id);
   return useQuery<Batch, Error>({
-    queryKey: BATCH_QUERY_KEYS.detail(id),
+    queryKey: BATCH_QUERY_KEYS.detail(normId),
     queryFn: async () => {
-      return await batchesApi.getBatchById(id);
+      return await batchesApi.getBatchById(normId);
     },
     enabled: enabled && !!id,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 15,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+/**
+ * TanStack Query hook for fetching batch students list with zero-delay caching & placeholder seeding.
+ */
+export function useBatchStudents(batchId?: number | string, enabled = true) {
+  const queryClient = useQueryClient();
+  const normalizedId = batchId ? String(batchId) : '';
+
+  return useQuery<import('@/types/batch').BatchStudentsData, Error>({
+    queryKey: BATCH_QUERY_KEYS.students(normalizedId),
+    queryFn: async () => {
+      if (!normalizedId) throw new Error('Batch ID is required');
+      return await batchesApi.getBatchStudents(normalizedId);
+    },
+    enabled: enabled && !!normalizedId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15,   // 15 minutes
+    placeholderData: (previousData) => {
+      if (previousData) return previousData;
+      // Pre-seed batch details from Batches Page cache if available for instantaneous header & stat cards render
+      const pageData = queryClient.getQueryData<BatchesPageData>(BATCH_QUERY_KEYS.page);
+      const batchItem = pageData?.batches?.find((b: any) => String(b.id) === normalizedId);
+      if (batchItem) {
+        return {
+          batch_details: {
+            id: Number(batchItem.id),
+            batch_name: (batchItem as any).batch_name || batchItem.title || '',
+            batch_title: batchItem.title || (batchItem as any).batch_name || '',
+            total_students: batchItem.students_count ? `${batchItem.students_count} Students` : '0 Students',
+            avg_attendance: batchItem.attendance || '0%',
+            timing: batchItem.time || '',
+            category: batchItem.category || '',
+          },
+          students: [],
+        };
+      }
+      return undefined;
+    },
+  });
+}
+
+/**
+ * Utility helper to prefetch batch students in the background for zero-delay instant screen opening.
+ */
+export function prefetchBatchStudents(queryClient: any, batchId: number | string) {
+  if (!batchId) return;
+  const idStr = String(batchId);
+  queryClient.prefetchQuery({
+    queryKey: BATCH_QUERY_KEYS.students(idStr),
+    queryFn: () => batchesApi.getBatchStudents(idStr),
+    staleTime: 1000 * 60 * 5,
   });
 }
 

@@ -14,6 +14,7 @@ import {
   CalendarRemove,
 } from 'iconsax-react-native';
 import styles, { COLORS } from '@/styles/styles';
+import StudentAvatar from '@/components/ui/StudentAvatar';
 
 const DEFAULT_AVATAR = require('@/../assets/images/home/userAvatar.svg');
 
@@ -110,11 +111,10 @@ export default function PendingFeeCard({
           onPress={onPressCard}
           className="flex-row items-center flex-1 mr-2"
         >
-          <Image
-            source={resolvedAvatar}
-            style={{ width: 40, height: 40, borderRadius: 22 }}
-            contentFit="cover"
-            transition={200}
+          <StudentAvatar
+            name={studentName}
+            avatarUri={avatarSource}
+            size={40}
           />
           <View className="ml-2.5 flex-1 justify-center">
             <Text

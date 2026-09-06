@@ -14,8 +14,8 @@ export default function SettingsScreen() {
     const { user: authUser, logoutAsync, isLoggingOut } = useAuth();
 
     const user: UserProfileData = {
-        name: authUser?.name || 'Admin User',
-        email: authUser?.email || 'admin@skatingacademy.com',
+        name: authUser?.name || '',
+        email: authUser?.email || '',
         image: authUser?.avatar || '',
     };
 
@@ -24,32 +24,32 @@ export default function SettingsScreen() {
             id: 1,
             label: 'My Profile',
             icon: <User size={24} color="#4B5563" variant="Linear" />,
-            onPress: () => console.log('My Profile'),
+            onPress: () => router.push('/(tabs)/settings/profile' as any),
         },
         {
             id: 2,
             label: 'Notifications',
             icon: <NotificationBing size={24} color="#4B5563" variant="Linear" />,
-            badgeCount: 2,
+            // badgeCount: 2,
             onPress: () => router.push('/(tabs)/notifications'),
         },
         {
             id: 3,
             label: 'App Settings',
             icon: <Setting2 size={24} color="#4B5563" variant="Linear" />,
-            onPress: () => console.log('App Settings'),
+            onPress: () => router.push('/(tabs)/settings/app-settings' as any),
         },
         {
             id: 4,
             label: 'Help & FAQ',
             icon: <MessageQuestion size={24} color="#4B5563" variant="Linear" />,
-            onPress: () => console.log('FAQ'),
+            onPress: () => router.push('/(tabs)/settings/help-faq' as any),
         },
         {
             id: 5,
             label: 'About App',
             icon: <InfoCircle size={24} color="#4B5563" variant="Linear" />,
-            onPress: () => console.log('About App'),
+            onPress: () => router.push('/(tabs)/settings/about' as any),
         },
         {
             id: 6,

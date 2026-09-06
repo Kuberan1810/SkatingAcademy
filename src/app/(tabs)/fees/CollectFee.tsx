@@ -21,11 +21,14 @@ export default function CollectFeeScreen() {
     <CollectFeeOverview
       student={studentData}
       onBackPress={() => {
-        if (params.from === 'pending-fees') {
-          router.replace('/(tabs)/dashboard/pending-fees' as any);
-        } else if (params.from === 'dashboard') {
-          router.replace('/(tabs)/dashboard' as any);
-        } else if (router.canGoBack()) {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/fees' as any);
+        }
+      }}
+      onConfirmSuccess={() => {
+        if (router.canGoBack()) {
           router.back();
         } else {
           router.replace('/(tabs)/fees' as any);

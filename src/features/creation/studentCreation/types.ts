@@ -3,7 +3,7 @@ export interface StudentFormData {
   // Step 1: Basic Info
   avatarUri?: string | null;
   fullName: string;
-  age: string;
+  age?: string;
   gender: string;
   dob: string;
   bloodGroup: string;
@@ -16,7 +16,7 @@ export interface StudentFormData {
   parentName: string;
   phoneNumber: string;
   emergencyContact: string;
-  monthlyFee: string;
+  monthlyFee?: string;
 }
 
 export interface AddStudentScreenProps {
@@ -30,4 +30,5 @@ export interface AddStudentScreenProps {
   onReset?: () => void;
   onPickAvatar?: () => void;
   availableBatches?: string[];
+  initialImportModalOpen?: boolean;
 }

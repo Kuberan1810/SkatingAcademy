@@ -31,3 +31,13 @@ export function useCompletedSession(sessionId: number | string, enabled = true) 
     enabled: enabled && !!sessionId && String(sessionId) !== 'undefined',
   });
 }
+
+export function useSessionDetail(sessionId: number | string, enabled = true) {
+  return useQuery<SessionData, Error>({
+    queryKey: ['sessions', 'detail', String(sessionId)],
+    queryFn: async () => {
+      return await sessionsApi.getSessionDetail(sessionId);
+    },
+    enabled: enabled && !!sessionId && String(sessionId) !== 'undefined',
+  });
+}

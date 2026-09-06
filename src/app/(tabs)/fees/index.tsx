@@ -1,9 +1,17 @@
 import React from 'react';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { FeeOverview } from '@/features/fees';
 import { useFeesPage } from '@/hooks/use-fees';
+import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 
 export default function FeesScreen() {
+  const { showTabBar } = useTabBarVisibility();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      showTabBar();
+    }, [showTabBar])
+  );
   const { data: feeData, isLoading, isRefetching, refetch } = useFeesPage();
 
   const overview = feeData?.overview;
@@ -36,7 +44,7 @@ export default function FeesScreen() {
       thisMonthAmount={overview?.this_month_amount ? `₹${overview.this_month_amount.toLocaleString('en-IN')}` : '₹0'}
       students={mappedStudents}
       recentPayments={mappedRecentPayments}
-      isLoading={isLoading}
+      isLoading={isLoading && !feeData}
       isRefetching={isRefetching}
       onRefresh={refetch}
       onStudentPress={(student) => {

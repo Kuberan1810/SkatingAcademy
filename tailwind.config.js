@@ -37,6 +37,7 @@ module.exports = {
         semibold: ["Urbanist_600SemiBold"],
         bold: ["Urbanist_700Bold"],
         urbanist: ["Urbanist_400Regular"],
+        "urbanist-regular": ["Urbanist_400Regular"],
         "urbanist-medium": ["Urbanist_500Medium"],
         "urbanist-semibold": ["Urbanist_600SemiBold"],
         "urbanist-bold": ["Urbanist_700Bold"],

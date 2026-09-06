@@ -16,6 +16,6 @@ export default function BatchesLayout() {
       <Stack.Screen name="add" />
       <Stack.Screen name="start-class" />
       <Stack.Screen name="completed-class" />
-    </Stack>
+    </Stack>          
   );
 }

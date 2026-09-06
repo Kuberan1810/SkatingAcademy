@@ -27,6 +27,8 @@ export interface CompletedClassOverviewProps {
   absentCount?: number;
   students?: CompletedStudentItem[];
   isLoading?: boolean;
+  isCompensationClass?: boolean;
+  compensationReason?: string | null;
   onBackPress?: () => void;
   onStudentPress?: (student: CompletedStudentItem) => void;
   onDeleteBatchPress?: () => void;
@@ -45,6 +47,8 @@ export default function CompletedClassOverview({
   absentCount = 0,
   students = [],
   isLoading = false,
+  isCompensationClass = false,
+  compensationReason,
   onBackPress,
   onStudentPress,
   onDeleteBatchPress,
@@ -187,6 +191,8 @@ export default function CompletedClassOverview({
               dateText={dateText}
               batchName={currentBatchName}
               subtitle={subtitle}
+              isCompensationClass={isCompensationClass}
+              compensationReason={compensationReason}
             />
 
             {/* Stat Cards: Total, Present, Absent */}

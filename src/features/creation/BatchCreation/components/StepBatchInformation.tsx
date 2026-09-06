@@ -6,14 +6,13 @@ import { BatchFormData } from '../types';
 export interface StepBatchInformationProps {
   formData: BatchFormData;
   updateField: (key: keyof BatchFormData, val: string) => void;
-  onOpenPicker: (type: 'level') => void;
+  onOpenPicker?: (type: 'level') => void;
   onFocusBottomField?: () => void;
 }
 
 export default function StepBatchInformation({
   formData,
   updateField,
-  onOpenPicker,
   onFocusBottomField,
 }: StepBatchInformationProps) {
   return (
@@ -24,16 +23,6 @@ export default function StepBatchInformation({
         placeholder="Enter the Batch Name"
         value={formData.batchName}
         onChangeText={(text) => updateField('batchName', text)}
-      />
-
-      {/* Level Dropdown */}
-      <FormField
-        label="Level"
-        placeholder="Select Level"
-        value={formData.level}
-        onChangeText={() => {}}
-        isDropdown={true}
-        onPressDropdown={() => onOpenPicker('level')}
       />
 
       {/* Location */}

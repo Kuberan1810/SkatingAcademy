@@ -36,7 +36,7 @@ export default function BatchStudentProfileRoute() {
     <StudentProfileScreen
       studentId={params.id}
       student={parsedStudent || undefined}
-      initialTab={(params.initialTab as any) || 'overview'}
+      initialTab={(params.initialTab as any) || (params.tab as any) || 'overview'}
       shouldRestoreTabBarOnUnmount={false}
       onBackPress={handleBack}
     />

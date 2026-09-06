@@ -78,9 +78,51 @@ export interface CollectFeeResponse {
   data: CollectFeeResponseData;
 }
 
+export interface PendingFeeSummary {
+  total_pending_amount: number;
+  total_students_count: number;
+  overdue_amount: number;
+  overdue_count: number;
+  due_today_amount: number;
+  due_today_count: number;
+  upcoming_amount: number;
+  upcoming_count: number;
+}
+
+export interface PendingFeeItemApi {
+  id: string;
+  student_name: string;
+  batch_name: string;
+  due_date: string;
+  amount: number;
+  status: string;
+  phone: string;
+  avatar_uri?: string | null;
+}
+
+export interface PendingFeesData {
+  summary: PendingFeeSummary;
+  fees: PendingFeeItemApi[];
+}
+
+export interface PendingFeesResponse {
+  status: string;
+  message: string;
+  data: PendingFeesData;
+}
+
 export const feesApi = {
   getFeesPage: async (): Promise<FeePageData> => {
     const response = await apiClient.get<FeePageResponse>(ENDPOINTS.fees.page);
+    return response.data.data;
+  },
+
+  getPendingFees: async (status: string = 'all', search?: string): Promise<PendingFeesData> => {
+    const params: Record<string, string> = { status };
+    if (search && search.trim()) {
+      params.search = search.trim();
+    }
+    const response = await apiClient.get<PendingFeesResponse>(ENDPOINTS.fees.pendingFees, { params });
     return response.data.data;
   },
 

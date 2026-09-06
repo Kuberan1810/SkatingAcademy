@@ -21,6 +21,7 @@ export default function StepBasicInfo({
 }: StepBasicInfoProps) {
   return (
     <View className="gap-4 mb-6">
+      {/* 1. Full Name */}
       <FormField
         label="Full Name"
         placeholder="Enter the name"
@@ -28,14 +29,7 @@ export default function StepBasicInfo({
         onChangeText={(text) => updateField('fullName', text)}
       />
 
-      <FormField
-        label="Age"
-        placeholder="Enter the Age"
-        value={formData.age}
-        onChangeText={(text) => updateField('age', text)}
-        keyboardType="numeric"
-      />
-
+      {/* 2. Gender */}
       <FormField
         label="Gender"
         placeholder="Select Gender"
@@ -45,6 +39,7 @@ export default function StepBasicInfo({
         onPressDropdown={onOpenGenderPicker}
       />
 
+      {/* 3. Date of Birth */}
       <FormField
         label="Date of Birth"
         placeholder="DD / MM / YYYY"
@@ -54,6 +49,7 @@ export default function StepBasicInfo({
         onPress={onOpenDatePicker}
       />
 
+      {/* 4. Blood Group */}
       <FormField
         label="Blood Group"
         placeholder="Select Blood Group"

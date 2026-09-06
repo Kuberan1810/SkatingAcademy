@@ -45,6 +45,7 @@ export interface BatchesOverviewData {
   };
   students: {
     total: number;
+    new_this_month?: number;
   };
   todays_attendance: {
     present: number;
@@ -62,9 +63,38 @@ export interface ApiBatchItem {
   status: string; // 'upcoming' | 'completed' | 'live'
   category: string;
   attendance?: string | null;
+  session_id?: string | number | null;
+  sessionId?: string | number | null;
 }
 
 export interface BatchesPageData {
   overview: BatchesOverviewData;
   batches: ApiBatchItem[];
 }
+
+export interface BatchStudentItem {
+  id: string | number;
+  name: string;
+  joined_date: string;
+  location: string;
+  attendance_percent: string;
+  phone: string;
+  payment_status: string;
+  amount: number;
+  paid_date: string | null;
+  last_payment?: any;
+  attendance_ratio?: string;
+  attendance_ratio_status?: string;
+  avatar_uri: string | null;
+}
+
+export interface BatchStudentsData {
+  batch_details: {
+    batch_title?: string;
+    batch_name?: string;
+    total_students?: string | number;
+    avg_attendance?: string;
+  };
+  students: BatchStudentItem[];
+}
+

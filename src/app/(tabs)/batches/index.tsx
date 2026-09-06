@@ -8,13 +8,15 @@ import Overview from '@/features/dashboard/Overview';
 import BatchList from '@/features/batches/BatchList';
 import SortBottomSheet, { SortOptionItem } from '@/components/ui/SortBottomSheet';
 import Toast from '@/components/ui/Toast';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Add } from 'iconsax-react-native';
 
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
-import { useBatchesPage } from '@/hooks/use-batches';
+import { useBatchesPage, prefetchBatchStudents } from '@/hooks/use-batches';
+import { useQueryClient } from '@tanstack/react-query';
 import { useStartSession } from '@/hooks/use-sessions';
 import { getErrorMessage } from '@/utils/error';
+import { BatchesPageSkeleton } from '@/components/ui/Skeleton';
 
 const SORT_OPTIONS: SortOptionItem[] = [
   { id: 'recent', label: 'Recently Added' },
@@ -25,11 +27,18 @@ const SORT_OPTIONS: SortOptionItem[] = [
 ];
 
 export default function BatchesScreen() {
-  const { handleScroll } = useTabBarVisibility();
+  const { handleScroll, showTabBar } = useTabBarVisibility();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      showTabBar();
+    }, [showTabBar])
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const [isSortVisible, setIsSortVisible] = useState(false);
   const [startingBatchId, setStartingBatchId] = useState<string | null>(null);
+  const [onBatchScroll, setOnBatchScroll] = useState<((e: any) => void) | null>(null);
 
   // Toast Notification State
   const [toast, setToast] = useState<{
@@ -49,6 +58,18 @@ export default function BatchesScreen() {
   // Fetch live Batches Page data (GET /api/v1/batches-page)
   const { data: pageData, isLoading, isRefetching, refetch } = useBatchesPage();
   const startSessionMutation = useStartSession();
+  const queryClient = useQueryClient();
+
+  // Background prefetch batch students for all batches as soon as batch list arrives
+  React.useEffect(() => {
+    if (pageData?.batches && pageData.batches.length > 0) {
+      pageData.batches.forEach((b: any) => {
+        if (b.id) {
+          prefetchBatchStudents(queryClient, b.id);
+        }
+      });
+    }
+  }, [pageData?.batches, queryClient]);
 
   const handleStartClass = (item: any) => {
     const batchIdNum = Number(item.id);
@@ -87,6 +108,49 @@ export default function BatchesScreen() {
     }
   };
 
+  const handleBatchPress = React.useCallback((item: any) => {
+    if (item.id) {
+      prefetchBatchStudents(queryClient, item.id);
+    }
+    router.push({
+      pathname: '/(tabs)/batches/StudentListScreen',
+      params: {
+        id: String(item.id),
+        title: item.title,
+        batch_name: item.title,
+        studentsCount: item.students_count || item.studentsCount ? `${item.students_count || item.studentsCount} Students` : undefined,
+        totalStudents: item.students_count || item.studentsCount ? `${item.students_count || item.studentsCount} Students` : undefined,
+        attendance: item.attendance ? `${item.attendance}` : undefined,
+        avgAttendance: item.attendance ? `${item.attendance}` : undefined,
+        from: 'batches',
+      },
+    } as any);
+  }, [queryClient]);
+
+  const handleAttendancePress = React.useCallback((item: any) => {
+    router.push({
+      pathname: '/(tabs)/batches/completed-class',
+      params: {
+        title: item.title,
+        sessionId: (item as any).sessionId || (item as any).session_id || item.id,
+        from: 'batches',
+      },
+    } as any);
+  }, []);
+
+  const handleEditBatch = React.useCallback((item: any) => {
+    router.push({
+      pathname: '/(tabs)/batches/add',
+      params: {
+        mode: 'edit',
+        batchId: item.id,
+        batchName: item.title,
+        level: 'Basic',
+        location: 'Sathya Stadium',
+      },
+    } as any);
+  }, []);
+
   return (
     <ScreenWrapper>
       {/* Toast Notification Banner */}
@@ -113,7 +177,12 @@ export default function BatchesScreen() {
       />
 
       <Animated.ScrollView
-        onScroll={handleScroll}
+        onScroll={(e) => {
+          handleScroll(e);
+          if (onBatchScroll) {
+            onBatchScroll(e);
+          }
+        }}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         decelerationRate="normal"
@@ -136,51 +205,31 @@ export default function BatchesScreen() {
           paddingBottom: 140,
         }}
       >
-        {/* Dynamic Overview Dashboard Cards */}
-        <Overview
-          overview={pageData?.overview}
-          isLoading={isLoading}
-        />
+        {isLoading && !pageData ? (
+          <BatchesPageSkeleton />
+        ) : (
+          <>
+            {/* Dynamic Overview Dashboard Cards */}
+            <Overview
+              overview={pageData?.overview}
+              isLoading={isLoading && !pageData}
+            />
 
-        {/* Dynamic Batches Cards List */}
-        <BatchList
-          batches={pageData?.batches ?? []}
-          isLoading={isLoading}
-          loadingBatchId={startingBatchId}
-          searchQuery={searchQuery}
-          sortBy={sortBy}
-          onBatchPress={(item) => {
-            router.push({
-              pathname: '/(tabs)/batches/StudentListScreen',
-              params: { title: item.title, from: 'batches' },
-            } as any);
-          }}
-          onStartPress={handleStartClass}
-          onAttendancePress={(item) => {
-            router.push({
-              pathname: '/(tabs)/batches/completed-class',
-              params: {
-                title: item.title,
-                sessionId: (item as any).sessionId || (item as any).session_id || item.id,
-                from: 'batches',
-              },
-            } as any);
-          }}
-          onEditBatch={(item) => {
-            router.push({
-              pathname: '/(tabs)/batches/add',
-              params: {
-                mode: 'edit',
-                batchId: item.id,
-                batchName: item.title,
-                level: 'Basic',
-                location: 'Sathya Stadium',
-              },
-            } as any);
-          }}
-          onDeleteBatch={(item) => console.log('Deleted batch:', item.title)}
-          onMorePress={(item) => console.log('More options for:', item.title)}
-        />
+            {/* Dynamic Batches Cards List */}
+            <BatchList
+              batches={pageData?.batches ?? []}
+              isLoading={isLoading && !pageData}
+              loadingBatchId={startingBatchId}
+              searchQuery={searchQuery}
+              sortBy={sortBy}
+              onScrollListener={(fn) => setOnBatchScroll(() => fn)}
+              onBatchPress={handleBatchPress}
+              onStartPress={handleStartClass}
+              onAttendancePress={handleAttendancePress}
+              onEditBatch={handleEditBatch}
+            />
+          </>
+        )}
       </Animated.ScrollView>
 
       <SortBottomSheet

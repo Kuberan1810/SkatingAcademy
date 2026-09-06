@@ -17,6 +17,8 @@ export default function DashboardLayout() {
       <Stack.Screen name="start-class" />
       <Stack.Screen name="completed-class" />
       <Stack.Screen name="student-profile" />
+      <Stack.Screen name="search" />
+      <Stack.Screen name="CollectFee" />
     </Stack>
   );
 }

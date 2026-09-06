@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { authApi } from '@/api/auth.api';
 import { LoginRequest, LoginResponse, AdminUser } from '@/types/auth';
-import { saveToken, saveUser, clearAuthSession, getToken } from '@/store/auth-store';
+import { getToken } from '@/store/auth-store';
 import { getErrorMessage } from '@/utils/error';
+import { useAuthContext } from '@/context/auth-context';
 
 export const AUTH_KEYS = {
   all: ['auth'] as const,
@@ -15,30 +16,31 @@ export const AUTH_KEYS = {
  */
 export function useLogin() {
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const { setSession } = useAuthContext();
 
   return useMutation<LoginResponse, Error, LoginRequest>({
     mutationFn: async (credentials: LoginRequest) => {
       return await authApi.login(credentials);
     },
     onSuccess: async (data) => {
-      // 1. Store JWT token securely
-      if (data.access_token) {
-        await saveToken(data.access_token);
-      }
+      let user: AdminUser | null = null;
 
-      // 2. Fetch and cache profile in background
+      // Fetch and cache profile
       try {
-        const user = await authApi.getMe();
+        user = await authApi.getMe();
         if (user) {
-          await saveUser(user);
           queryClient.setQueryData(AUTH_KEYS.me, user);
         }
       } catch {
         // Continue even if profile fetch has a delay
       }
 
-      // 3. Invalidate auth queries to trigger fresh state
+      // Update AuthContext session (which saves token and user in store)
+      if (data.access_token) {
+        await setSession(data.access_token, user);
+      }
+
+      // Invalidate auth queries to trigger fresh state
       queryClient.invalidateQueries({ queryKey: AUTH_KEYS.all });
     },
   });
@@ -63,19 +65,19 @@ export function useMe() {
 }
 
 /**
- * Hook for logging out and wiping session state.
+ * Hook for logging out and wiping session state locally without backend API.
  */
 export function useLogout() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { logout } = useAuthContext();
 
   return useMutation({
     mutationFn: async () => {
-      await authApi.logout();
-    },
-    onSettled: async () => {
-      await clearAuthSession();
+      await logout();
       queryClient.clear();
+    },
+    onSuccess: () => {
       router.replace('/(auth)/login');
     },
   });
@@ -85,14 +87,16 @@ export function useLogout() {
  * Unified auth hook for general access.
  */
 export function useAuth() {
+  const authContext = useAuthContext();
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
   const meQuery = useMe();
 
   return {
-    // Current User Profile
-    user: meQuery.data,
-    isUserLoading: meQuery.isLoading,
+    // Current User Profile & Auth Status
+    user: meQuery.data || authContext.user,
+    isAuthenticated: authContext.isAuthenticated,
+    isUserLoading: meQuery.isLoading || authContext.isLoading,
     isUserError: meQuery.isError,
 
     // Login Mutation
@@ -110,3 +114,4 @@ export function useAuth() {
 }
 
 export default useAuth;
+

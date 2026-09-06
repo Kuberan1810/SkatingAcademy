@@ -12,19 +12,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-  LayoutAnimation,
-  UIManager,
 } from 'react-native';
 import { AttendanceStatus, StudentData } from './StudentAttendanceCard';
 import styles from '@/styles/styles';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  try {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  } catch (e) {
-    // Ignore in New Architecture
-  }
-}
 
 const { height } = Dimensions.get('window');
 
@@ -94,7 +84,6 @@ export default function AttendanceSummarySheet({
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   const toggleExpand = (expand: boolean) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsExpanded(expand);
   };
 

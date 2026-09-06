@@ -20,7 +20,7 @@ export default function StudentProfileRoute() {
     <StudentProfileScreen
       studentId={params.id}
       student={parsedStudent || undefined}
-      initialTab={(params.initialTab as any) || 'overview'}
+      initialTab={(params.initialTab as any) || (params.tab as any) || 'overview'}
       shouldRestoreTabBarOnUnmount={true}
       onBackPress={() => {
         if (params.from === 'completed-class') {

@@ -68,6 +68,23 @@ export function useDeleteStudent() {
 }
 
 /**
+ * TanStack Query mutation for bulk deleting students.
+ */
+export function useBulkDeleteStudents() {
+  const queryClient = useQueryClient();
+
+  return useMutation<any, Error, (number | string)[]>({
+    mutationFn: async (studentIds: (number | string)[]) => {
+      return await studentsApi.bulkDeleteStudents(studentIds);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: STUDENT_QUERY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: ['batches'] });
+    },
+  });
+}
+
+/**
  * TanStack Query hook for fetching the main Students page data.
  */
 export function useStudentsPage(enabled = true) {
@@ -77,7 +94,8 @@ export function useStudentsPage(enabled = true) {
       return await studentsApi.getStudentsPage();
     },
     enabled,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
     placeholderData: (previousData) => previousData,
   });
 }
@@ -92,6 +110,9 @@ export function useStudentDetail(id: number | string, enabled = true) {
       return await studentsApi.getStudentById(id);
     },
     enabled: enabled && !!id,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 15,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -105,6 +126,9 @@ export function useStudentProfile(id: number | string, enabled = true) {
       return await studentsApi.getStudentProfile(id);
     },
     enabled: enabled && !!id,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 15,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -142,6 +166,49 @@ export function useStudents() {
     deleteError: deleteMutation.error ? getErrorMessage(deleteMutation.error) : null,
     resetDelete: deleteMutation.reset,
   };
+}
+
+/**
+ * TanStack Query mutation for previewing student import.
+ */
+export function usePreviewStudentImport() {
+  return useMutation<
+    any,
+    Error,
+    { uri: string; name: string; type?: string }
+  >({
+    mutationFn: async (file) => {
+      return await studentsApi.previewStudentImport(file);
+    },
+  });
+}
+
+/**
+ * TanStack Query mutation for previewing student text/OCR import.
+ */
+export function usePreviewStudentImportText() {
+  return useMutation<any, Error, string>({
+    mutationFn: async (text) => {
+      return await studentsApi.previewStudentImportText(text);
+    },
+  });
+}
+
+/**
+ * TanStack Query mutation for confirming student import.
+ */
+export function useConfirmStudentImport() {
+  const queryClient = useQueryClient();
+
+  return useMutation<any, Error, { batch_id: number; students: any[] }>({
+    mutationFn: async (payload) => {
+      return await studentsApi.confirmStudentImport(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: STUDENT_QUERY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: ['batches'] });
+    },
+  });
 }
 
 export default useStudents;

@@ -52,8 +52,8 @@ export default function StepParentPayment({
 
       <FormField
         label="Monthly Fee"
-        placeholder="₹1,250"
-        value={formData.monthlyFee}
+        placeholder="₹0 (Optional)"
+        value={formData.monthlyFee || ''}
         onChangeText={handleFeeChange}
         keyboardType="numeric"
         onFocus={onFocusBottomField}

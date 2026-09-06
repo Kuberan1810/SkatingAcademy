@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, ScrollView, Alert, KeyboardAvoidingView, Platform, Keyboard, Text, BackHandler } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
-import { Setting2, TickCircle } from 'iconsax-react-native';
+import { TickCircle } from 'iconsax-react-native';
 import { router } from 'expo-router';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
@@ -201,13 +201,12 @@ export default function CollectFeeOverview({
         </Animated.View>
       )}
 
-      {/* Header with Back, Title, and Settings right icon */}
+      {/* Header with Back and Title */}
       <Header
         variant="page"
         title="Collect Fee"
         showBack={true}
         onBackPress={handleBack}
-        rightIcon={Setting2}
       />
 
       <KeyboardAvoidingView

@@ -3,6 +3,15 @@ import { View } from 'react-native';
 import StatsCard from '@/components/ui/StatsCard';
 
 export interface AllStudentsStatCardsProps {
+  overview?: {
+    total_students?: number;
+    new_this_month?: number;
+    boys_count?: number;
+    boys_percent?: number;
+    girls_count?: number;
+    girls_percent?: number;
+    pending_fees_count?: number;
+  };
   totalStudents?: number;
   newThisMonth?: number;
   boysCount?: number;
@@ -17,18 +26,26 @@ export interface AllStudentsStatCardsProps {
 }
 
 export default function AllStudentsStatCards({
-  totalStudents = 26,
-  newThisMonth = 18,
-  boysCount = 72,
-  boysPercent = 57,
-  girlsCount = 54,
-  girlsPercent = 43,
-  pendingFeesCount = 7,
+  overview,
+  totalStudents: propTotalStudents,
+  newThisMonth: propNewThisMonth,
+  boysCount: propBoysCount,
+  boysPercent: propBoysPercent,
+  girlsCount: propGirlsCount,
+  girlsPercent: propGirlsPercent,
+  pendingFeesCount: propPendingFeesCount,
   onTotalPress,
   onBoysPress,
   onGirlsPress,
   onPendingFeesPress,
 }: AllStudentsStatCardsProps) {
+  const totalStudents = overview?.total_students ?? propTotalStudents ?? 0;
+  const newThisMonth = overview?.new_this_month ?? propNewThisMonth ?? 0;
+  const boysCount = overview?.boys_count ?? propBoysCount ?? 0;
+  const boysPercent = overview?.boys_percent ?? propBoysPercent ?? 0;
+  const girlsCount = overview?.girls_count ?? propGirlsCount ?? 0;
+  const girlsPercent = overview?.girls_percent ?? propGirlsPercent ?? 0;
+  const pendingFeesCount = overview?.pending_fees_count ?? propPendingFeesCount ?? 0;
   return (
     <View className="gap-3.5 mb-6">
       {/* Row 1: Total Students & Boys */}

@@ -1,13 +1,20 @@
 import '@/global.css';
 import { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { useColorScheme, Text, TextInput } from 'react-native';
+import { useColorScheme, Text, TextInput, LogBox } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, Urbanist_400Regular, Urbanist_500Medium, Urbanist_600SemiBold, Urbanist_700Bold } from '@expo-google-fonts/urbanist';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppTabs from '@/components/app-tabs';
+import { ToastContainer } from '@/components/ui/Toast';
 import React from 'react';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+import { AuthProvider, AuthGuard } from '@/context/auth-context';
+
+LogBox.ignoreLogs([
+  'setLayoutAnimationEnabledExperimental',
+  'setLayoutAnimationEnabledExperimental is currently a no-op in the New Architecture.',
+]);
 
 // Disable Reanimated strict mode warning for shared values during render
 configureReanimatedLogger({
@@ -39,9 +46,11 @@ export default function TabLayout() {
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: 2,
+            retry: 1,
             staleTime: 1000 * 60 * 5,
+            gcTime: 1000 * 60 * 15,
             refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
           },
         },
       })
@@ -67,8 +76,14 @@ export default function TabLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={DefaultTheme}>
-        <AppTabs />
+        <AuthProvider>
+          <AuthGuard>
+            <AppTabs />
+            <ToastContainer />
+          </AuthGuard>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
 }
+

@@ -6,12 +6,12 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { Calendar, Clock, Profile2User } from 'iconsax-react-native';
+import { Calendar, CalendarRemove, Clock, Profile2User } from 'iconsax-react-native';
 import styles, { COLORS } from '@/styles/styles';
 import { EllipsisVertical } from 'lucide-react-native';
 import PrimaryBtn from '@/components/ui/PrimaryBtn';
 
-export type BatchStatusVariant = 'upcoming' | 'started' | 'completed';
+export type BatchStatusVariant = 'upcoming' | 'started' | 'completed' | 'no_class';
 
 export interface BatchCardProps {
   id?: string;
@@ -23,31 +23,31 @@ export interface BatchCardProps {
   studentsCount: number | string;
   /** Date string for upcoming batch (e.g. "10 Jul 2026") */
   date?: string;
-  /** Attendance info if session completed (e.g. "20/24" or { present: 20, total: 24 }) */
-  attendance?: string | { present: number; total: number };
-  /** Batch session status */
-  status?: BatchStatusVariant;
-  /** Custom label for action button */
+  /** Attendance stats object { present, total } or string "20/24" for completed batch */
+  attendance?: { present: number; total: number } | string;
+  /** Status variant or API status string ('completed' | 'no_class' | 'started' | 'upcoming') */
+  status?: BatchStatusVariant | string;
+  /** Custom action button label (overrides default based on status) */
   actionLabel?: string;
-  /** Loading state for start class action button */
+  /** Loading state for primary action button */
   loading?: boolean;
-  /** Callback when action button (Start / View Attendance) is pressed */
+  /** Action handler when clicking the primary button */
   onActionPress?: () => void;
-  /** Callback when 3-dots context menu button is pressed */
+  /** 3-dots more menu button press handler */
   onMorePress?: () => void;
-  /** Callback when card is pressed */
+  /** Card body press handler (navigates to details or completed class) */
   onPressCard?: () => void;
-  /** Custom container style */
+  /** Custom outer style */
   style?: StyleProp<ViewStyle>;
-  /** Custom Tailwind class for container */
+  /** Custom Tailwind classes */
   className?: string;
 }
 
-export default function BatchCard({
+function BatchCard({
   title,
   time,
   studentsCount,
-  date ,
+  date,
   attendance,
   status,
   actionLabel,
@@ -58,27 +58,35 @@ export default function BatchCard({
   style,
   className = '',
 }: BatchCardProps) {
-  const isCompleted = status === 'completed' || !!attendance;
+  const normalizedStatus = (status || '').toLowerCase();
+  const isCompleted = normalizedStatus === 'completed';
+  const isNoClass =
+    normalizedStatus === 'no_class' ||
+    normalizedStatus === 'noclass' ||
+    normalizedStatus === 'no class' ||
+    (actionLabel || '').toLowerCase() === 'no class';
+
   const formattedStudents =
     typeof studentsCount === 'number'
       ? `${studentsCount} Students`
       : studentsCount;
 
   let presentCount = 0;
-  let totalCount =0;
+  let totalCount = 0;
   if (typeof attendance === 'object') {
     presentCount = attendance.present;
     totalCount = attendance.total;
   } else if (typeof attendance === 'string') {
     const parts = attendance.split('/');
     if (parts.length === 2) {
-      presentCount = parseInt(parts[0], 10) ;
-      totalCount = parseInt(parts[1], 10) ;
+      presentCount = parseInt(parts[0], 10) || 0;
+      totalCount = parseInt(parts[1], 10) || 0;
     }
   }
 
   const buttonText =
-    actionLabel || (isCompleted ? 'View Attendance' : 'Start');
+    actionLabel ||
+    (isCompleted ? 'View Attendance' : isNoClass ? 'No Class' : 'Start Class');
 
   const BodyContainer = onPressCard ? TouchableOpacity : View;
 
@@ -128,6 +136,13 @@ export default function BatchCard({
                   /{totalCount}
                 </Text>
               </View>
+            </View>
+          ) : isNoClass ? (
+            <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FFF1F2] border border-[#FECDD3] gap-2.5 self-start">
+              <CalendarRemove size={18} color="#E11D48" variant="Linear" />
+              <Text className="text-[15px] font-urbanist-medium text-[#E11D48] tracking-tight">
+                No Class · {date}
+              </Text>
             </View>
           ) : (
             <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FAFAFA] border border-primary-border gap-2.5 self-start">
@@ -189,10 +204,15 @@ export default function BatchCard({
       {/* Bottom Row: Reusable Primary Action Button */}
       <PrimaryBtn
         label={buttonText}
-        onPress={onActionPress}
+        onPress={isNoClass ? undefined : onActionPress}
         variant={isCompleted ? 'green' : 'black'}
+        disabled={isNoClass || loading}
+        bgColor={isNoClass ? '#EBE7E7' : undefined}
+        textColor={isNoClass ? '#8A8A8E' : '#FFFFFF'}
         loading={loading}
       />
     </View>
   );
 }
+
+export default React.memo(BatchCard);

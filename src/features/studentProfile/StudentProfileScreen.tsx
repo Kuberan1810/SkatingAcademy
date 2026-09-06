@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Linking, BackHandler } from 'react-native';
+import { View, Linking, BackHandler, RefreshControl } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Trash } from 'iconsax-react-native';
+import { Trash, ExportSquare } from 'iconsax-react-native';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
 import Toast from '@/components/ui/Toast';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 import { ApiStudentProfileData } from '@/types/student';
 import { useStudentProfile, useDeleteStudent } from '@/hooks/use-students';
+import { useExportSingleStudentReport } from '@/hooks/use-reports';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
+import ExportSingleStudentModal, {
+  SingleStudentExportFilterValues,
+} from '@/components/ui/ExportSingleStudentModal';
 import AddStudentScreen from '@/features/creation/studentCreation/AddStudentScreen';
 import { StudentProfileSkeleton } from '@/components/ui/Skeleton';
 
@@ -27,47 +31,47 @@ import AttendanceTab from './components/tabs/AttendanceTab';
 import PaymentsTab from './components/tabs/PaymentsTab';
 
 const DEFAULT_STUDENT_PROFILE: StudentProfileData = {
-  id: '1',
-  name: 'Rahul Sharma',
-  joinedDate: '10 Jul 2026',
-  location: 'Sathya Stadium',
-  attendancePercent: '92%',
+  id: '',
+  name: '',
+  joinedDate: '',
+  location: '',
+  attendancePercent: '0%',
   parentInfo: {
-    parentName: 'Rajesh Sharma',
-    phone: '+91 98765 43210',
-    emergency: '+91 98765 43211',
+    parentName: '',
+    phone: '',
+    emergency: '',
   },
   personalInfo: {
-    gender: 'Male',
-    dob: '2012-05-14',
-    bloodGroup: 'B+',
-    address: 'Sathya Stadium, Skating Academy',
+    gender: '',
+    dob: '',
+    bloodGroup: '',
+    address: '',
   },
   feeInfo: {
-    monthlyFee: '₹2,400',
+    monthlyFee: '',
     pending: '₹0',
     status: 'PAID',
   },
   attendanceStats: {
-    present: 86,
-    absent: 4,
-    attendancePercent: '92%',
-    scheduledDaysCount: 12,
+    present: 0,
+    absent: 0,
+    attendancePercent: '0%',
+    scheduledDaysCount: 0,
   },
   attendanceGrid: [],
   balanceSummary: {
-    lastPaidAmount: '₹1,250',
-    lastPaidDate: 'Paid on 12 Jul 2026',
-    nextPaymentAmount: '₹1,250',
-    nextPaymentDueDate: '05 Aug 2026',
-    daysLeftText: '12 Days Left',
+    lastPaidAmount: '',
+    lastPaidDate: '',
+    nextPaymentAmount: '',
+    nextPaymentDueDate: '',
+    daysLeftText: '',
   },
   currentMonthFee: {
-    monthYear: 'AUGUST 2026',
-    amount: '₹1,250',
-    status: 'paid',
-    statusSubtext: 'Paid on 05 Aug',
-    paymentDetails: 'Paid by: GPay / Cash',
+    monthYear: '',
+    amount: '',
+    status: 'pending',
+    statusSubtext: '',
+    paymentDetails: '',
   },
   transactions: [],
 };
@@ -75,27 +79,27 @@ const DEFAULT_STUDENT_PROFILE: StudentProfileData = {
 export function mapApiProfileToStudentProfile(apiData: ApiStudentProfileData): StudentProfileData {
   return {
     id: String(apiData.id),
-    name: apiData.name || 'Student',
+    name: apiData.name || '',
     avatar: apiData.avatar_uri || undefined,
-    joinedDate: apiData.joined_date || '14 May 2012',
-    location: apiData.location || 'Sathya Stadium',
+    joinedDate: apiData.joined_date || '',
+    location: apiData.location || '',
     attendancePercent: apiData.attendance_percent || '0%',
     parentInfo: {
-      parentName: apiData.parent_info?.parent_name || 'Parent',
-      phone: apiData.parent_info?.phone || '',
-      emergency: apiData.parent_info?.emergency || '',
+      parentName: apiData.parent_info?.parent_name || (apiData as any).parent_name || '',
+      phone: apiData.parent_info?.phone || (apiData as any).phone || (apiData as any).phone_number || '',
+      emergency: apiData.parent_info?.emergency || (apiData as any).emergency_contact || (apiData as any).emergency || '',
     },
     personalInfo: {
-      gender: apiData.personal_info?.gender || 'Male',
-      dob: apiData.personal_info?.dob || '2012-05-14',
-      bloodGroup: apiData.personal_info?.blood_group || 'O+',
-      address: 'Sathya Stadium, Skating Academy',
+      gender: apiData.personal_info?.gender || (apiData as any).gender || '',
+      dob: apiData.personal_info?.dob || (apiData as any).dob || '',
+      bloodGroup: apiData.personal_info?.blood_group || (apiData as any).blood_group || '',
+      address: (apiData.personal_info as any)?.address || (apiData as any).address || '',
     },
     feeInfo: {
       monthlyFee: apiData.fee_info?.monthly_fee
         ? `₹${apiData.fee_info.monthly_fee.toLocaleString('en-IN')}`
-        : '₹1,250',
-      pending: apiData.fee_info?.pending
+        : '',
+      pending: apiData.fee_info?.pending !== undefined
         ? `₹${apiData.fee_info.pending.toLocaleString('en-IN')}`
         : '₹0',
       status: (apiData.fee_info?.status as any) || 'PAID',
@@ -144,6 +148,14 @@ export function mapApiProfileToStudentProfile(apiData: ApiStudentProfileData): S
   };
 }
 
+const normalizeTab = (tab?: string): StudentProfileTabType => {
+  if (!tab) return 'overview';
+  const t = tab.toLowerCase();
+  if (t.includes('attend')) return 'attendance';
+  if (t.includes('pay')) return 'payments';
+  return 'overview';
+};
+
 export default function StudentProfileScreen({
   student = DEFAULT_STUDENT_PROFILE,
   studentId,
@@ -161,14 +173,29 @@ export default function StudentProfileScreen({
 
   const targetId = studentId || student.id || '1';
   const profileQuery = useStudentProfile(targetId, !!targetId);
+  const exportReportMutation = useExportSingleStudentReport();
 
-  const [activeTab, setActiveTab] = useState<StudentProfileTabType>(initialTab);
+  const [activeTab, setActiveTab] = useState<StudentProfileTabType>(() => normalizeTab(initialTab));
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isExportModalVisible, setIsExportModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+    setIsRefreshing(true);
+    try {
+      await profileQuery.refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     if (initialTab) {
-      setActiveTab(initialTab);
+      setActiveTab(normalizeTab(initialTab));
     }
   }, [initialTab]);
 
@@ -318,6 +345,37 @@ export default function StudentProfileScreen({
     setIsDeleteModalVisible(true);
   };
 
+  const handleExportReport = (
+    values: SingleStudentExportFilterValues,
+    actionType: 'download' | 'share'
+  ) => {
+    exportReportMutation.mutate(
+      {
+        studentId: targetId,
+        studentName: currentStudent.name,
+        month: values.month,
+        year: values.year,
+        format: values.format,
+        actionType,
+      },
+      {
+        onSuccess: (result) => {
+          setIsExportModalVisible(false);
+          showToast(
+            result.message ||
+              (actionType === 'share'
+                ? 'Report shared successfully!'
+                : 'Report downloaded successfully!'),
+            'success'
+          );
+        },
+        onError: (err) => {
+          showToast(err.message || 'Failed to export student report', 'error');
+        },
+      }
+    );
+  };
+
   const handleConfirmDelete = () => {
     const targetName = currentStudent.name;
     deleteStudentMutation.mutate(currentStudent.id, {
@@ -383,6 +441,8 @@ export default function StudentProfileScreen({
         title="Student Profile"
         showBack={true}
         onBackPress={handleBack}
+        secondaryRightIcon={<ExportSquare size={20} color="#1E293B" variant="Linear" />}
+        onSecondaryRightPress={() => setIsExportModalVisible(true)}
         rightIcon={<Trash size={20} color="#EF4444" variant="Linear" />}
         onRightPress={handleDelete}
       />
@@ -400,6 +460,14 @@ export default function StudentProfileScreen({
           alwaysBounceVertical={true}
           overScrollMode="always"
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing || profileQuery.isRefetching}
+              onRefresh={handleRefresh}
+              tintColor="#4186F7"
+              colors={['#4186F7']}
+            />
+          }
           contentContainerStyle={{
             flexGrow: 1,
             paddingHorizontal: 20,
@@ -463,6 +531,16 @@ export default function StudentProfileScreen({
         isLoading={deleteStudentMutation.isPending}
         onClose={() => setIsDeleteModalVisible(false)}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* Export Single Student Report Modal */}
+      <ExportSingleStudentModal
+        visible={isExportModalVisible}
+        studentId={targetId}
+        studentName={currentStudent.name}
+        isLoading={exportReportMutation.isPending}
+        onClose={() => setIsExportModalVisible(false)}
+        onExport={handleExportReport}
       />
     </ScreenWrapper>
   );

@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { ArrowRight2 } from 'iconsax-react-native';
 import React, { useState } from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { router } from 'expo-router';
 import LogoutConfirmationModal from '@/components/ui/LogoutConfirmationModal';
 import styles from '@/styles/styles';
 
@@ -105,7 +106,16 @@ export default function SettingsScreenCard({ user, menuItems, onLogoutConfirm, i
     return (
         <View className="flex-1 bg-white px-5 pt-6">
             {/* User Info */}
-            <View className="flex-row items-center mb-8">
+            <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                    try {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch (e) {}
+                    router.push('/(tabs)/settings/profile' as any);
+                }}
+                className="flex-row items-center mb-8"
+            >
                 {user.image ? (
                     <Image
                         source={{ uri: user.image }}
@@ -121,8 +131,8 @@ export default function SettingsScreenCard({ user, menuItems, onLogoutConfirm, i
                     </View>
                 )}
 
-                <View>
-                    <Text className="text-[24px] font-urbanist-semibold text-[#333] mb-1">
+                <View className="flex-1">
+                    <Text className="text-[24px] font-urbanist-semibold text-[#333] mb-1 capitalize">
                         {user.name}
                     </Text>
 
@@ -130,7 +140,8 @@ export default function SettingsScreenCard({ user, menuItems, onLogoutConfirm, i
                         {user.email}
                     </Text>
                 </View>
-            </View>
+                <ArrowRight2 size={20} color="#9CA3AF" variant="Linear" />
+            </TouchableOpacity>
 
             {/* Menu */}
             <View className="flex-1">

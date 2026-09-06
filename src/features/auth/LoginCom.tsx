@@ -22,8 +22,12 @@ import {
   removeRememberedEmail,
 } from '@/store/auth-store';
 
+import { BackHandler } from 'react-native';
+import { useAuthContext } from '@/context/auth-context';
+
 export default function LoginCom() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuthContext();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,6 +36,21 @@ export default function LoginCom() {
   const [clientError, setClientError] = useState<string | null>(null);
 
   const loginMutation = useLogin();
+
+  // Instant zero-delay redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
+  // Disable physical Android back button on Login screen after logout
+  useEffect(() => {
+    const backSubscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      return true; // Strictly prevents going back into protected screens
+    });
+    return () => backSubscription.remove();
+  }, []);
 
   // Load remembered email on component mount
   useEffect(() => {
@@ -44,6 +63,10 @@ export default function LoginCom() {
     }
     loadRememberedCredentials();
   }, []);
+
+  if (isAuthenticated || isLoading) {
+    return null;
+  }
 
   const handleLogin = async () => {
     setClientError(null);

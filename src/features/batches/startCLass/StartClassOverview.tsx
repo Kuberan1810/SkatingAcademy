@@ -2,12 +2,13 @@ import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
 import Search from '@/components/ui/Search';
 import Toast from '@/components/ui/Toast';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { Setting2, User } from 'iconsax-react-native';
-import React, { useMemo, useState, useEffect } from 'react';
-import { Text, View } from 'react-native';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { BackHandler, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import AttendanceSummarySheet from './AttendanceSummarySheet';
+import ExitClassAlertSheet from './ExitClassAlertSheet';
 import StartClassSummary from './StartClassSummary';
 import SaveAttendanceButton from './StudentAttendanceButton';
 import { AttendanceStatus, StudentData } from './StudentAttendanceCard';
@@ -23,6 +24,8 @@ export interface StartClassOverviewProps {
   dateText?: string;
   students?: StudentData[];
   sessionId?: string;
+  isCompensationClass?: boolean;
+  compensationReason?: string | null;
   onBackPress?: () => void;
   onSave?: (attendance: Record<string, AttendanceStatus>) => void;
 }
@@ -33,6 +36,8 @@ export default function StartClassOverview({
   dateText = 'Today',
   students = [],
   sessionId,
+  isCompensationClass = false,
+  compensationReason,
   onBackPress,
   onSave,
 }: StartClassOverviewProps) {
@@ -46,9 +51,46 @@ export default function StartClassOverview({
     };
   }, [hideTabBar, showTabBar]);
 
+  const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showSummarySheet, setShowSummarySheet] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const isLeavingRef = useRef(false);
+
+  // Intercept React Navigation back action / swipe gesture
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+      if (isLeavingRef.current) {
+        return;
+      }
+      e.preventDefault();
+      setShowExitModal(true);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  // Intercept Android Hardware Back Button
+  useEffect(() => {
+    const onHardwareBack = () => {
+      if (showSummarySheet) {
+        setShowSummarySheet(false);
+        return true;
+      }
+      setShowExitModal(true);
+      return true;
+    };
+
+    const backSub = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onHardwareBack
+    );
+
+    return () => {
+      backSub.remove();
+    };
+  }, [showSummarySheet]);
 
   // Toast Notification State
   const [toast, setToast] = useState<{
@@ -155,6 +197,7 @@ export default function StartClassOverview({
       },
       {
         onSuccess: () => {
+          isLeavingRef.current = true;
           setShowSummarySheet(false);
           showToast('Attendance Confirmed & Class Completed!', 'success');
           setTimeout(() => {
@@ -179,12 +222,18 @@ export default function StartClassOverview({
   };
 
   const handleBack = () => {
+    setShowExitModal(true);
+  };
+
+  const handleConfirmExit = () => {
+    isLeavingRef.current = true;
+    setShowExitModal(false);
     if (onBackPress) {
       onBackPress();
     } else if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(tabs)/dashboard/index' as any);
+      router.replace('/(tabs)/dashboard' as any);
     }
   };
 
@@ -227,6 +276,8 @@ export default function StartClassOverview({
           batchName={batchName}
           totalStudents={activeStudents.length}
           allSelected={allSelected}
+          isCompensationClass={isCompensationClass}
+          compensationReason={compensationReason}
           onToggleSelectAll={handleToggleSelectAll}
         />
 
@@ -273,6 +324,17 @@ export default function StartClassOverview({
         onClose={() => setShowSummarySheet(false)}
         onEditAttendance={() => setShowSummarySheet(false)}
         onConfirmAttendance={handleConfirmAttendance}
+      />
+
+      {/* Exit Class Warning Alert Sheet */}
+      <ExitClassAlertSheet
+        visible={showExitModal}
+        title="Leave Class Session?"
+        message="Are you sure you want to leave? If you exit now, this session will automatically be marked empty and you will not be able to restart it."
+        confirmText="Yes, Exit"
+        cancelText="Stay in Session"
+        onClose={() => setShowExitModal(false)}
+        onConfirm={handleConfirmExit}
       />
     </ScreenWrapper>
   );

@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { View, Text, Linking, BackHandler, RefreshControl } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { View, Text, Linking, BackHandler, RefreshControl, TouchableOpacity } from 'react-native';
+import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { router } from 'expo-router';
-import { Add, Diagram, Profile2User, Calendar } from 'iconsax-react-native';
+import { Add, Diagram, Profile2User, Calendar, Trash } from 'iconsax-react-native';
+import { X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import ScreenWrapper from '@/components/screen-wrapper';
 import Header from '@/components/ui/Header';
@@ -14,12 +15,14 @@ import Toast from '@/components/ui/Toast';
 import { StudentListItem } from '@/features/batches/StudentListScreen/StudentCard';
 import { useTabBarVisibility } from '@/context/tab-bar-visibility';
 import AddStudentScreen from '@/features/creation/studentCreation/AddStudentScreen';
-import { OverviewSkeleton } from '@/components/ui/Skeleton';
-import { useStudentsPage, useDeleteStudent } from '@/hooks/use-students';
+import { StudentsPageSkeleton } from '@/components/ui/Skeleton';
+import { useStudentsPage, useDeleteStudent, useBulkDeleteStudents } from '@/hooks/use-students';
 import { useIncrementalList } from '@/hooks/use-incremental-list';
+import { getErrorMessage } from '@/utils/error';
 
 import AllStudentsStatCards from './AllStudentsStatCards';
 import AllStudentsList from './AllStudentsList';
+import styles from '@/styles/styles';
 
 const STUDENT_SORT_OPTIONS: SortOptionItem[] = [
   { id: 'attendance_high', label: 'Attendance: High to Low', directionText: 'High to low', isAscending: false, icon: Diagram },
@@ -40,9 +43,10 @@ export default function AllStudentsOverview({
   onAddStudentPress,
   onStudentPress,
 }: AllStudentsOverviewProps) {
-  const { handleScroll } = useTabBarVisibility();
-  const { data: pageData, isLoading: isPageLoading, refetch: refetchPage } = useStudentsPage();
+  const { hideTabBar, showTabBar, handleScroll } = useTabBarVisibility();
+  const { data: pageData, isLoading: isPageLoading, isRefetching, refetch: refetchPage } = useStudentsPage();
   const deleteStudentMutation = useDeleteStudent();
+  const bulkDeleteMutation = useBulkDeleteStudents();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
@@ -53,6 +57,20 @@ export default function AllStudentsOverview({
   const [studentToEdit, setStudentToEdit] = useState<StudentListItem | null>(null);
   const [isOptionsSheetVisible, setIsOptionsSheetVisible] = useState(false);
   const [isAddStudentVisible, setIsAddStudentVisible] = useState(false);
+
+  // Bulk Selection State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+
+  // Toggle Tab Bar visibility based on selection mode
+  useEffect(() => {
+    if (isSelectionMode) {
+      hideTabBar();
+    } else {
+      showTabBar();
+    }
+  }, [isSelectionMode, hideTabBar, showTabBar]);
 
   // Toast Notification State
   const [toast, setToast] = useState<{
@@ -70,123 +88,89 @@ export default function AllStudentsOverview({
   };
 
   // Map API students array to UI StudentListItem format
-  const apiStudentsList: StudentListItem[] = useMemo(() => {
+  const apiStudentsList: (StudentListItem & { attVal: number })[] = useMemo(() => {
     if (!pageData?.students) return [];
-    return pageData.students.map((st) => ({
-      id: String(st.id),
-      name: st.name || 'Student',
-      joinedDate: st.joined_date || '14 May 2012',
-      location: st.location || st.batch_name || 'Sathya Stadium',
-      attendancePercent: st.attendance_percent || '0%',
-      phone: st.phone || '',
-      paymentStatus: st.payment_status === 'paid' ? 'paid' : 'overdue',
-      amount: st.amount ? `₹${st.amount.toLocaleString()}` : '₹1,250',
-      paidDate: st.paid_date || undefined,
-      attendanceRatio: st.attendance_ratio || `${st.attended_count ?? 0}/${st.conducted_count ?? 0}`,
-      attendanceRatioStatus: (st.attended_count ?? 0) >= (st.conducted_count ?? 0) * 0.75 ? 'success' : 'danger',
-      avatar: st.avatar_uri || undefined,
-    }));
+    return pageData.students.map((st: any) => {
+      const attPercent = st.attendance_percent || '0%';
+      const attVal = parseFloat(attPercent.replace('%', '')) || 0;
+      return {
+        id: String(st.id),
+        name: st.name || '',
+        joinedDate: st.joined_date || '',
+        location: st.location || st.batch_name || '',
+        attendancePercent: attPercent,
+        attVal,
+        phone: st.phone || st.phone_number || '',
+        paymentStatus: (st.payment_status || '').toLowerCase() === 'paid' ? 'paid' : 'overdue',
+        amount: st.amount ? `₹${st.amount.toLocaleString()}` : (st.monthly_fee ? `₹${st.monthly_fee.toLocaleString()}` : ''),
+        paidDate: st.paid_date || undefined,
+        attendanceRatio: st.attendance_ratio || `${st.attended_count ?? 0}/${st.conducted_count ?? 0}`,
+        attendanceRatioStatus: (st.attended_count ?? 0) >= (st.conducted_count ?? 0) * 0.75 ? 'success' : 'danger',
+        gender: st.gender,
+        dob: st.dob,
+        bloodGroup: st.blood_group,
+        address: st.address,
+        parentName: st.parent_name,
+        emergencyContact: st.emergency_contact,
+      };
+    });
   }, [pageData?.students]);
 
-  // Handle hardware back press on Android
-  useEffect(() => {
-    const backAction = () => {
-      if (studentToDelete) {
-        setStudentToDelete(null);
-        return true;
-      }
-      if (isSortSheetVisible) {
-        setIsSortSheetVisible(false);
-        return true;
-      }
-      if (isOptionsSheetVisible) {
-        setIsOptionsSheetVisible(false);
-        setSelectedStudent(null);
-        return true;
-      }
-      if (isAddStudentVisible) {
-        setIsAddStudentVisible(false);
-        return true;
-      }
-      if (studentToEdit) {
-        setStudentToEdit(null);
-        return true;
-      }
-      if (onBackPress) {
-        onBackPress();
-        return true;
-      }
-      return false;
-    };
-
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      backAction
-    );
-
-    return () => backHandler.remove();
-  }, [
-    studentToDelete,
-    isSortSheetVisible,
-    isOptionsSheetVisible,
-    isAddStudentVisible,
-    studentToEdit,
-    onBackPress,
-  ]);
-
+  // Filter students based on Active Filter Pill & Search Query
   const filteredStudents = useMemo(() => {
-    let result = apiStudentsList.filter((s) => {
+    let result = apiStudentsList;
+
+    if (activeFilter === 'Paid') {
+      result = result.filter((s) => s.paymentStatus === 'paid');
+    } else if (activeFilter === 'Overdue') {
+      result = result.filter((s) => s.paymentStatus === 'overdue');
+    }
+
+    if (searchQuery.trim().length > 0) {
       const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        s.name.toLowerCase().includes(q) ||
-        s.location?.toLowerCase().includes(q) ||
-        s.phone?.includes(q);
+      result = result.filter(
+        (s) =>
+          (s.name || '').toLowerCase().includes(q) ||
+          (s.phone || '').includes(q) ||
+          (s.location || '').toLowerCase().includes(q)
+      );
+    }
 
-      const matchesTab =
-        activeFilter === 'All' ||
-        (activeFilter === 'Paid' && s.paymentStatus === 'paid') ||
-        (activeFilter === 'Overdue' && s.paymentStatus === 'overdue');
-
-      return matchesSearch && matchesTab;
-    });
-
-    // Apply sorting logic
+    // Apply Sorting
     return [...result].sort((a, b) => {
-      if (selectedSortId === 'attendance_high') {
-        const attA = parseInt(a.attendancePercent?.replace('%', '') || '0', 10);
-        const attB = parseInt(b.attendancePercent?.replace('%', '') || '0', 10);
-        return attB - attA;
+      switch (selectedSortId) {
+        case 'attendance_high':
+          return b.attVal - a.attVal;
+        case 'attendance_low':
+          return a.attVal - b.attVal;
+        case 'name_asc':
+          return a.name.localeCompare(b.name);
+        case 'name_desc':
+          return b.name.localeCompare(a.name);
+        case 'recently_joined':
+        default:
+          return 0;
       }
-      if (selectedSortId === 'attendance_low') {
-        const attA = parseInt(a.attendancePercent?.replace('%', '') || '0', 10);
-        const attB = parseInt(b.attendancePercent?.replace('%', '') || '0', 10);
-        return attA - attB;
-      }
-      if (selectedSortId === 'name_asc') {
-        return a.name.localeCompare(b.name);
-      }
-      if (selectedSortId === 'name_desc') {
-        return b.name.localeCompare(a.name);
-      }
-      if (selectedSortId === 'recently_joined') {
-        return (b.joinedDate || '').localeCompare(a.joinedDate || '');
-      }
-      return 0;
     });
-  }, [apiStudentsList, searchQuery, activeFilter, selectedSortId]);
+  }, [apiStudentsList, activeFilter, searchQuery, selectedSortId]);
 
+  // Incremental pagination hook for smooth lazy scrolling
   const {
     displayedItems: displayedStudents,
-    hasMore: hasMoreStudents,
+    hasMore,
     onScroll: onIncrementalScroll,
   } = useIncrementalList({
     items: filteredStudents,
-    pageSize: 10,
-    isLoading: isPageLoading,
+    pageSize: 20,
+    isLoading: isPageLoading && !pageData,
   });
 
   const handleBack = useCallback(() => {
+    if (isSelectionMode) {
+      setIsSelectionMode(false);
+      setSelectedIds(new Set());
+      return;
+    }
     if (onBackPress) {
       onBackPress();
     } else {
@@ -195,10 +179,10 @@ export default function AllStudentsOverview({
           router.back();
         }
       } catch (e) {
-        console.log('Navigation back error:', e);
+        // Suppress back navigation error
       }
     }
-  }, [onBackPress]);
+  }, [onBackPress, isSelectionMode]);
 
   const handleCallStudent = useCallback((phone?: string) => {
     if (phone) {
@@ -226,42 +210,81 @@ export default function AllStudentsOverview({
             id: student.id,
             name: student.name,
             avatar: student.avatar,
-            joinedDate: student.joinedDate || '14 May 2012',
-            location: student.location || 'Sathya Stadium',
-            attendancePercent: student.attendancePercent || '92%',
+            joinedDate: student.joinedDate || '',
+            location: student.location || '',
+            attendancePercent: student.attendancePercent || '0%',
             parentInfo: {
-              parentName: student.parentName || 'Rajesh Sharma',
-              phone: student.phone || '+91 98765 43210',
-              emergency: student.emergencyContact || '+91 98765 43211',
+              parentName: student.parentName || '',
+              phone: student.phone || '',
+              emergency: student.emergencyContact || '',
             },
             personalInfo: {
-              gender: student.gender || 'Male',
-              dob: student.dob || '2012-05-14',
-              bloodGroup: student.bloodGroup || 'B+',
-              address: student.address || '12 MG Road, Bengaluru 560001',
+              gender: student.gender || '',
+              dob: student.dob || '',
+              bloodGroup: student.bloodGroup || '',
+              address: student.address || '',
             },
             feeInfo: {
-              monthlyFee: student.amount || '₹1,250',
-              pending: student.paymentStatus === 'paid' ? '₹0' : '₹1,250',
-              status: student.paymentStatus === 'paid' ? 'PAID' : 'OVERDUE',
+              monthlyFee: student.amount || '',
+              dueDate: student.paidDate || '15th of every month',
+              status: student.paymentStatus === 'paid' ? 'Paid' : 'Overdue',
             },
           }),
         },
-      } as any);
+      });
     },
     []
   );
 
+  // Handle Long Press to activate Selection Mode
+  const handleLongPressStudent = useCallback((student: StudentListItem) => {
+    setIsSelectionMode(true);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.add(String(student.id));
+      return next;
+    });
+  }, []);
+
+  // Handle Card Click (Selection mode toggle vs Navigate)
   const handleStudentPress = useCallback(
     (student: StudentListItem) => {
-      if (onStudentPress) {
+      if (isSelectionMode) {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          const stId = String(student.id);
+          if (next.has(stId)) {
+            next.delete(stId);
+          } else {
+            next.add(stId);
+          }
+          if (next.size === 0) {
+            setIsSelectionMode(false);
+          }
+          return next;
+        });
+      } else if (onStudentPress) {
         onStudentPress(student);
       } else {
         navigateToProfile(student, 'overview');
       }
     },
-    [onStudentPress, navigateToProfile]
+    [isSelectionMode, onStudentPress, navigateToProfile]
   );
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === filteredStudents.length) {
+      setSelectedIds(new Set());
+    } else {
+      const allIds = new Set(filteredStudents.map((s) => String(s.id)));
+      setSelectedIds(allIds);
+    }
+  }, [filteredStudents, selectedIds.size]);
+
+  const handleCancelSelection = useCallback(() => {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
 
   const handleOpenAddStudent = () => {
     try {
@@ -270,7 +293,7 @@ export default function AllStudentsOverview({
     if (onAddStudentPress) {
       onAddStudentPress();
     } else {
-      setIsAddStudentVisible(true);
+      router.push('/(tabs)/students/add' as any);
     }
   };
 
@@ -283,15 +306,15 @@ export default function AllStudentsOverview({
           id: studentToEdit.id,
           avatarUri: typeof studentToEdit.avatar === 'string' ? studentToEdit.avatar : null,
           fullName: studentToEdit.name,
-          gender: studentToEdit.gender || 'Male',
-          dob: studentToEdit.dob || '2012-05-14',
-          bloodGroup: studentToEdit.bloodGroup || 'O+',
-          batch: studentToEdit.location || 'Morning Beginners',
+          gender: studentToEdit.gender || '',
+          dob: studentToEdit.dob || '',
+          bloodGroup: studentToEdit.bloodGroup || '',
+          batch: studentToEdit.location || '',
           joinDate: studentToEdit.joinedDate || '',
-          parentName: studentToEdit.parentName || 'Rajesh Sharma',
-          phoneNumber: studentToEdit.phone || '+91 98765 43210',
-          emergencyContact: studentToEdit.emergencyContact || '+91 98765 43211',
-          monthlyFee: studentToEdit.amount || '₹1,250',
+          parentName: studentToEdit.parentName || '',
+          phoneNumber: studentToEdit.phone || '',
+          emergencyContact: studentToEdit.emergencyContact || '',
+          monthlyFee: studentToEdit.amount || '',
         }}
         onBackPress={() => setStudentToEdit(null)}
         onSubmit={() => {
@@ -330,11 +353,11 @@ export default function AllStudentsOverview({
       {/* Header with Title "Students List" & Add (+) Button */}
       <Header
         variant="page"
-        title="Students List"
+        title={isSelectionMode ? `${selectedIds.size} Selected` : "Students List"}
         showBack={true}
         onBackPress={handleBack}
-        rightIcon={Add}
-        onRightPress={handleOpenAddStudent}
+        rightIcon={isSelectionMode ? undefined : Add}
+        onRightPress={isSelectionMode ? undefined : handleOpenAddStudent}
       />
 
       {/* Search Input Bar with Filter Button */}
@@ -362,104 +385,139 @@ export default function AllStudentsOverview({
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
-            refreshing={isPageLoading}
+            refreshing={isRefetching}
             onRefresh={refetchPage}
             tintColor="#4186F7"
-            colors={['#4186F7']}
           />
         }
         contentContainerStyle={{
           flexGrow: 1,
           paddingHorizontal: 20,
+          paddingTop: 16,
           paddingBottom: 140,
         }}
       >
-        {/* Overview Section Header */}
-        <Text className="text-[20px] font-urbanist-bold text-primary tracking-tight mb-3">
-          Overview
-        </Text>
-
-        {/* Overview Stat Cards */}
         {isPageLoading && !pageData ? (
-          <OverviewSkeleton />
+          <StudentsPageSkeleton />
         ) : (
-          <AllStudentsStatCards
-            totalStudents={overview?.total_students ?? 0}
-            newThisMonth={overview?.new_this_month ?? 0}
-            boysCount={overview?.boys_count ?? 0}
-            boysPercent={overview?.boys_percent ?? 0}
-            girlsCount={overview?.girls_count ?? 0}
-            girlsPercent={overview?.girls_percent ?? 0}
-            pendingFeesCount={overview?.pending_fees_count ?? 0}
-          />
-        )}
+          <>
+            {/* Dynamic All Students Stat Cards */}
+            <AllStudentsStatCards overview={overview} />
 
-        {/* Student List Section */}
-        <AllStudentsList
-          students={displayedStudents}
-          isLoading={isPageLoading}
-          hasMore={hasMoreStudents}
-          activeFilter={activeFilter}
-          onSelectFilter={setActiveFilter}
-          onStudentPress={handleStudentPress}
-          onCallPress={handleCallStudent}
-          onMorePress={handleOpenOptions}
-        />
+            {/* Dynamic Students Cards List */}
+            <View className="mt-6">
+              <AllStudentsList
+                students={displayedStudents}
+                isLoading={isPageLoading && !pageData}
+                hasMore={hasMore}
+                filterTabs={['All', 'Paid', 'Overdue']}
+                activeFilter={activeFilter}
+                isSelectionMode={isSelectionMode}
+                selectedIds={selectedIds}
+                onSelectFilter={(tab) => setActiveFilter(tab)}
+                onStudentPress={handleStudentPress}
+                onStudentLongPress={handleLongPressStudent}
+                onCallPress={handleCallStudent}
+                onMorePress={handleOpenOptions}
+              />
+            </View>
+          </>
+        )}
       </Animated.ScrollView>
 
-      {/* Bottom Sheet Options */}
+      {/* Neat Flush Bottom Selection Bar (Sits at bottom edge replacing Navbar) */}
+      {isSelectionMode && (
+         <Animated.View
+                  entering={SlideInDown.duration(200)}
+                  exiting={SlideOutDown.duration(150)}
+                  className="absolute bottom-0 left-0 right-0 z-[9999] bg-white border-t border-primary-border px-5 py-7 pb-7 flex-row items-center justify-between shadow-2xl"
+                >
+                  {/* Left: Close Button & Selected Count */}
+                  <View className="flex-row items-center gap-3">
+                    <TouchableOpacity
+                      style={ [styles.BlackInnerShadowStyle]}
+                      activeOpacity={0.7}
+                      onPress={handleCancelSelection}
+                      className="w-12 h-12 rounded-full bg-white items-center justify-center border border-primary-border "
+                    >
+                      <X size={18} color="#475569" />
+                    </TouchableOpacity>
+        
+                    <View>
+                      <Text className="text-[15px] font-urbanist-bold text-primary tracking-tight">
+                        {selectedIds.size} Selected
+                      </Text>
+                      <TouchableOpacity activeOpacity={0.7} onPress={handleSelectAll}>
+                        <Text className="text-[13px] font-urbanist-bold text-[#4186F7]">
+                          {selectedIds.size === filteredStudents.length ? 'Deselect All' : 'Select All'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+        
+                  {/* Right: Red Delete Button */}
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={ [styles.InnerShadowStyle]}
+                    onPress={() => {
+                      if (selectedIds.size > 0) {
+                        setIsBulkDeleteModalOpen(true);
+                      }
+                    }}
+                    disabled={selectedIds.size === 0}
+                    className={`px-6 py-4 rounded-full flex-row items-center gap-2 ${
+                      selectedIds.size > 0 ? 'bg-[#EF4444]' : 'bg-[#CBD5E1]'
+                    }`}
+                  >
+                    <Trash size={18} color="#FFFFFF" variant="Bold" />
+                    <Text className="text-[14px] font-urbanist-bold text-white">
+                      Delete ({selectedIds.size})
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+      )}
+
+      {/* Options Bottom Sheet */}
       {selectedStudent && (
         <StudentOptionsBottomSheet
           visible={isOptionsSheetVisible}
           student={selectedStudent}
-          onClose={() => {
-            setIsOptionsSheetVisible(false);
-            setSelectedStudent(null);
-          }}
+          studentName={selectedStudent.name}
+          onClose={() => setIsOptionsSheetVisible(false)}
           onViewProfile={() => {
-            const studentToView = selectedStudent;
             setIsOptionsSheetVisible(false);
-            setSelectedStudent(null);
-            if (studentToView) {
-              navigateToProfile(studentToView, 'overview');
-            }
+            navigateToProfile(selectedStudent, 'overview');
           }}
-          onEditStudent={(st) => {
-            const studentTarget = st || selectedStudent;
+          onViewAttendance={() => {
             setIsOptionsSheetVisible(false);
-            setSelectedStudent(null);
-            if (studentTarget) {
-              setStudentToEdit(studentTarget);
-            }
+            navigateToProfile(selectedStudent, 'attendance');
           }}
-          onCallParent={(st) => {
-            const target = st || selectedStudent;
+          onAttendanceHistory={() => {
             setIsOptionsSheetVisible(false);
-            setSelectedStudent(null);
-            if (target?.phone) {
-              handleCallStudent(target.phone);
-            }
+            navigateToProfile(selectedStudent, 'attendance');
           }}
-          onAttendanceHistory={(st) => {
-            const target = st || selectedStudent;
+          onViewPayments={() => {
             setIsOptionsSheetVisible(false);
-            setSelectedStudent(null);
-            if (target) {
-              navigateToProfile(target, 'attendance');
-            }
+            navigateToProfile(selectedStudent, 'payments');
           }}
-          onPaymentHistory={(st) => {
-            const target = st || selectedStudent;
+          onPaymentHistory={() => {
             setIsOptionsSheetVisible(false);
-            setSelectedStudent(null);
-            if (target) {
-              navigateToProfile(target, 'payments');
-            }
+            navigateToProfile(selectedStudent, 'payments');
           }}
-          onDeleteStudent={(st) => {
-            const studentTarget = st || selectedStudent;
+          onCallParent={() => {
             setIsOptionsSheetVisible(false);
-            setSelectedStudent(null);
+            handleCallStudent(selectedStudent.phone);
+          }}
+          onEditStudent={() => {
+            setIsOptionsSheetVisible(false);
+            const targetStudent = selectedStudent;
+            setTimeout(() => {
+              setStudentToEdit(targetStudent);
+            }, 250);
+          }}
+          onDeleteStudent={() => {
+            setIsOptionsSheetVisible(false);
+            const studentTarget = selectedStudent;
             setTimeout(() => {
               setStudentToDelete(studentTarget);
             }, 250);
@@ -477,7 +535,7 @@ export default function AllStudentsOverview({
         onClose={() => setIsSortSheetVisible(false)}
       />
 
-      {/* Delete Confirmation Modal */}
+      {/* Single Student Delete Confirmation Modal */}
       <DeleteConfirmationModal
         visible={!!studentToDelete}
         itemName={studentToDelete?.name}
@@ -496,6 +554,30 @@ export default function AllStudentsOverview({
               },
             });
           }
+        }}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        visible={isBulkDeleteModalOpen}
+        itemName={`${selectedIds.size} Selected Students`}
+        isLoading={bulkDeleteMutation.isPending}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={() => {
+          const idsArray = Array.from(selectedIds);
+          bulkDeleteMutation.mutate(idsArray, {
+            onSuccess: () => {
+              showToast(`${idsArray.length} Students deleted successfully!`, 'delete');
+              setIsBulkDeleteModalOpen(false);
+              setIsSelectionMode(false);
+              setSelectedIds(new Set());
+            },
+            onError: (err) => {
+              setIsBulkDeleteModalOpen(false);
+              const msg = getErrorMessage(err, 'Failed to bulk delete students');
+              showToast(msg, 'error');
+            },
+          });
         }}
       />
     </ScreenWrapper>

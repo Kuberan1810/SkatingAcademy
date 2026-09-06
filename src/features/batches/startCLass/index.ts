@@ -6,4 +6,4 @@ export { default as SaveAttendanceButton } from './StudentAttendanceButton';
 export * from './StudentAttendanceCard';
 export { default as StudentAttendanceCard } from './StudentAttendanceCard';
 export { default as StudentList } from './StudentList';
-
+export { default as ExitClassAlertSheet } from './ExitClassAlertSheet';

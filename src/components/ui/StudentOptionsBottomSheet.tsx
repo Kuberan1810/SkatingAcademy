@@ -28,24 +28,30 @@ const { height } = Dimensions.get('window');
 export interface StudentOptionsBottomSheetProps {
   visible: boolean;
   student?: StudentListItem | null;
+  studentName?: string;
   onClose: () => void;
-  onViewProfile?: (student: StudentListItem) => void;
-  onEditStudent?: (student: StudentListItem) => void;
-  onCallParent?: (student: StudentListItem) => void;
-  onAttendanceHistory?: (student: StudentListItem) => void;
-  onPaymentHistory?: (student: StudentListItem) => void;
-  onDeleteStudent?: (student: StudentListItem) => void;
+  onViewProfile?: (student?: any) => void;
+  onEditStudent?: (student?: any) => void;
+  onCallParent?: (student?: any) => void;
+  onAttendanceHistory?: (student?: any) => void;
+  onPaymentHistory?: (student?: any) => void;
+  onViewAttendance?: (student?: any) => void;
+  onViewPayments?: (student?: any) => void;
+  onDeleteStudent?: (student?: any) => void;
 }
 
 export default function StudentOptionsBottomSheet({
   visible,
   student,
+  studentName,
   onClose,
   onViewProfile,
   onEditStudent,
   onCallParent,
   onAttendanceHistory,
   onPaymentHistory,
+  onViewAttendance,
+  onViewPayments,
   onDeleteStudent,
 }: StudentOptionsBottomSheetProps) {
   const [showModal, setShowModal] = React.useState(visible);
@@ -184,7 +190,10 @@ export default function StudentOptionsBottomSheet({
       isDanger: false,
       onPress: () => {
         onClose();
-        if (student) onAttendanceHistory?.(student);
+        if (student) {
+          const fn = onAttendanceHistory || onViewAttendance;
+          fn?.(student);
+        }
       },
     },
     {
@@ -194,7 +203,10 @@ export default function StudentOptionsBottomSheet({
       isDanger: false,
       onPress: () => {
         onClose();
-        if (student) onPaymentHistory?.(student);
+        if (student) {
+          const fn = onPaymentHistory || onViewPayments;
+          fn?.(student);
+        }
       },
     },
     {
