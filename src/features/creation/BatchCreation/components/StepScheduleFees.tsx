@@ -84,48 +84,24 @@ export default function StepScheduleFees({
         </View>
       </View>
 
-      {/* Monthly Fee & Yearly Fee Row */}
-      <View className="flex-row gap-3.5">
-        {/* Monthly Fee */}
-        <View className="flex-1 gap-2">
-          <Text className="text-[14px] font-urbanist-semibold text-primary">
-            Monthly Fee
+      {/* Monthly Fee */}
+      <View className="gap-2">
+        <Text className="text-[14px] font-urbanist-semibold text-primary">
+          Monthly Fee
+        </Text>
+        <View className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-4 gap-1.5">
+          <Text className="text-[15px] font-urbanist-medium text-[#333]">
+            ₹
           </Text>
-          <View className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-4 gap-1.5">
-            <Text className="text-[15px] font-urbanist-medium text-[#333]">
-              ₹
-            </Text>
-            <TextInput
-              className="flex-1 text-[15px] font-urbanist-medium text-[#333] p-0"
-              placeholder="1,250"
-              placeholderTextColor="#A2A2A7"
-              value={formData.monthlyFee}
-              onChangeText={(text) => updateField('monthlyFee', text)}
-              keyboardType="numeric"
-              onFocus={onFocusBottomField}
-            />
-          </View>
-        </View>
-
-        {/* Yearly Fee */}
-        <View className="flex-1 gap-2">
-          <Text className="text-[14px] font-urbanist-semibold text-primary">
-            Yearly Fee
-          </Text>
-          <View className="h-[50px] bg-white rounded-full border border-primary-border flex-row items-center px-4 gap-1.5">
-            <Text className="text-[15px] font-urbanist-medium text-[#333]">
-              ₹
-            </Text>
-            <TextInput
-              className="flex-1 text-[15px] font-urbanist-medium text-[#333] p-0"
-              placeholder="15,000"
-              placeholderTextColor="#A2A2A7"
-              value={formData.yearlyFee}
-              onChangeText={(text) => updateField('yearlyFee', text)}
-              keyboardType="numeric"
-              onFocus={onFocusBottomField}
-            />
-          </View>
+          <TextInput
+            className="flex-1 text-[15px] font-urbanist-medium text-[#333] p-0"
+            placeholder="1,250"
+            placeholderTextColor="#A2A2A7"
+            value={formData.monthlyFee}
+            onChangeText={(text) => updateField('monthlyFee', text)}
+            keyboardType="numeric"
+            onFocus={onFocusBottomField}
+          />
         </View>
       </View>
     </View>

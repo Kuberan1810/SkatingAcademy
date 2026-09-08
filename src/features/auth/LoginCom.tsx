@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Sms, Lock, Eye, EyeSlash, InfoCircle } from 'iconsax-react-native';
@@ -126,14 +127,21 @@ export default function LoginCom() {
               
             </View> */}
 
-            {/* TITLE */}
-            <View className="mb-12">
-              <Text className="font-medium text-[32px] text-[#1E1E2D]">
-                Sign In
+            {/* TITLE & LOGO */}
+            <View className="items-center mb-12">
+              <View className="w-[88px] h-[88px] rounded-[24px] bg-black items-center justify-center p-2 mb-3 border border-[#F2EEF4] shadow-sm">
+                <Image
+                  source={require('@/assets/images/nsa-logo.png')}
+                  style={{ width: 72, height: 72, borderRadius: 18 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text className="font-urbanist-bold text-[26px] text-[#1E1E2D]">
+                National Skating Academy
               </Text>
-              {/* <Text className="text-[14px] text-[#A2A2A7] mt-1.5 font-urbanist">
-                Enter your credentials to access the admin portal
-              </Text> */}
+              <Text className="text-[14px] text-[#8E8E93] mt-1 font-urbanist-medium">
+                Sign In to access your coach portal
+              </Text>
             </View>
 
             {/* ERROR BANNER */}

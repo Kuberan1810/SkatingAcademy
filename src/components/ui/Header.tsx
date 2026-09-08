@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { ArrowLeft2, NotificationBing } from 'iconsax-react-native';
 import React from 'react';
 import { ImageSourcePropType, StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import SkeletonComponent from '@/components/ui/Skeleton';
 
 export type IconPropType =
     | React.ReactNode
@@ -19,6 +20,7 @@ export interface HeaderProps {
     greeting?: string;
     avatarSource?: ImageSourcePropType | string;
     onAvatarPress?: () => void;
+    isLoading?: boolean;
 
     // Page Header Props
     title?: string;
@@ -40,7 +42,7 @@ export interface HeaderProps {
     className?: string;
 }
 
-const DEFAULT_AVATAR = require('../../../assets/images/home/dp.png');
+const DEFAULT_AVATAR = require('../../../assets/images/home/dp.svg');
 
 /**
  * Renders icons:
@@ -87,9 +89,10 @@ export function FigmaIconButton({
 
 export default function Header({
     variant = 'profile',
-    userName = 'Instructor',
+    userName,
     greeting = 'Welcome',
     avatarSource = DEFAULT_AVATAR,
+    isLoading,
     title,
     subtitle,
     showBack = true,
@@ -148,13 +151,22 @@ export default function Header({
 
                 {/* Center: Title & Optional Subtitle */}
                 <View className="flex-1 mx-2 items-center justify-center">
-                    <Text className="text-[20px] font-urbanist-bold text-primary text-center" numberOfLines={1}>
-                        {title}
-                    </Text>
-                    {subtitle && (
-                        <Text className="text-[16px] font-urbanist-medium text-secondary text-center mt-1" numberOfLines={1}>
-                            {subtitle}
-                        </Text>
+                    {isLoading ? (
+                        <View className="items-center gap-1.5">
+                            <SkeletonComponent width={120} height={20} borderRadius={6} />
+                            {subtitle && <SkeletonComponent width={80} height={14} borderRadius={4} />}
+                        </View>
+                    ) : (
+                        <>
+                            <Text className="text-[20px] font-urbanist-bold text-primary text-center" numberOfLines={1}>
+                                {title}
+                            </Text>
+                            {subtitle && (
+                                <Text className="text-[16px] font-urbanist-medium text-secondary text-center mt-1" numberOfLines={1}>
+                                    {subtitle}
+                                </Text>
+                            )}
+                        </>
                     )}
                 </View>
 
@@ -177,34 +189,54 @@ export default function Header({
         );
     }
 
+    // Determine if profile header is in loading state
+    const isProfileLoading = isLoading ?? (!userName && isLoading !== false);
+
     // Render Profile Header (Avatar + Greetings + Notification / Right Icon)
     return (
         <View style={style} className={`flex-row items-center justify-between px-5 py-3.5 w-full ${className}`}>
             {/* Left section: Avatar & Greetings */}
             <View className="flex-row items-center flex-1 mr-3">
-                <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={onAvatarPress}
-                    disabled={!onAvatarPress}
-                    style={{ width: 48, height: 48, borderRadius: 24, overflow: 'hidden' }}
-                    className="w-[48px] h-[48px] rounded-full overflow-hidden bg-gray-200 justify-center items-center"
-                >
-                    <Image
-                        source={resolvedAvatar}
-                        style={{ width: 48, height: 48, borderRadius: 24 }}
-                        className="w-[48px] h-[48px] rounded-full"
-                        contentFit="cover"
-                        transition={200}
+                {isProfileLoading ? (
+                    <SkeletonComponent
+                        width={48}
+                        height={48}
+                        borderRadius={24}
                     />
-                </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={onAvatarPress}
+                        disabled={!onAvatarPress}
+                        style={{ width: 48, height: 48, borderRadius: 24, overflow: 'hidden' }}
+                        className="w-[48px] h-[48px] rounded-full overflow-hidden bg-gray-200 justify-center items-center"
+                    >
+                        <Image
+                            source={resolvedAvatar}
+                            style={{ width: 48, height: 48, borderRadius: 24 }}
+                            className="w-[48px] h-[48px] rounded-full"
+                            contentFit="cover"
+                            transition={200}
+                        />
+                    </TouchableOpacity>
+                )}
 
                 <View className="ml-3.5 justify-center flex-1">
-                    <Text className="text-[15px] font-urbanist-medium text-light -tracking-[0.2px] mb-0.5">
-                        {greeting}
-                    </Text>
-                    <Text className="text-[17px] font-urbanist-semibold text-primary -tracking-[0.5px]" numberOfLines={1}>
-                        {userName}
-                    </Text>
+                    {isProfileLoading ? (
+                        <View className="gap-1.5">
+                            <SkeletonComponent width={55} height={12} borderRadius={6} />
+                            <SkeletonComponent width={120} height={16} borderRadius={6} />
+                        </View>
+                    ) : (
+                        <>
+                            <Text className="text-[15px] font-urbanist-medium text-light -tracking-[0.2px] mb-0.5">
+                                {greeting}
+                            </Text>
+                            <Text className="text-[17px] font-urbanist-semibold text-primary -tracking-[0.5px]" numberOfLines={1}>
+                                {userName || ''}
+                            </Text>
+                        </>
+                    )}
                 </View>
             </View>
 

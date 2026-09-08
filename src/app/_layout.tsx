@@ -7,6 +7,7 @@ import { useFonts, Urbanist_400Regular, Urbanist_500Medium, Urbanist_600SemiBold
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppTabs from '@/components/app-tabs';
 import { ToastContainer } from '@/components/ui/Toast';
+import AppOpeningAnimation from '@/components/ui/AppOpeningAnimation';
 import React from 'react';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { AuthProvider, AuthGuard } from '@/context/auth-context';
@@ -80,6 +81,7 @@ export default function TabLayout() {
           <AuthGuard>
             <AppTabs />
             <ToastContainer />
+            <AppOpeningAnimation />
           </AuthGuard>
         </AuthProvider>
       </ThemeProvider>

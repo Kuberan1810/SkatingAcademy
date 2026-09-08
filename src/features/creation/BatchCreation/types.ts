@@ -11,7 +11,7 @@ export interface BatchFormData {
   startTime: string;
   endTime: string;
   monthlyFee: string;
-  yearlyFee: string;
+  yearlyFee?: string;
 }
 
 export interface CreateBatchScreenProps {

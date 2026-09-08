@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function DashboardScreen() {
   const queryClient = useQueryClient();
-  const { user: authUser } = useAuth();
+  const { user: authUser, isUserLoading } = useAuth();
   const { handleScroll, showTabBar } = useTabBarVisibility();
   const { data: dashboardData, isLoading, isRefetching, refetch } = useDashboard();
 
@@ -107,7 +107,8 @@ export default function DashboardScreen() {
       <ScreenWrapper>
         <Header
           variant="profile"
-          userName={authUser?.name || 'Instructor'}
+          userName={authUser?.name}
+          isLoading={isUserLoading && !authUser?.name}
           greeting="Welcome"
           avatarSource={authUser?.avatar || require('@/assets/images/home/dp.svg')}
           onAvatarPress={() => router.push('/(tabs)/settings')}

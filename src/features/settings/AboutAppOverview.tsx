@@ -182,16 +182,16 @@ export default function AboutAppOverview() {
           className="items-center text-center mb-5"
         >
           {/* Logo with Soft Border & Shadow */}
-          <View className="w-24 h-24 rounded-[26px] bg-white items-center justify-center p-2 mb-4 border border-[#F2EEF4] shadow-sm">
+          <View className="w-24 h-24 rounded-[26px] bg-black items-center justify-center p-2 mb-4 border border-[#F2EEF4] shadow-sm">
             <Image
-              source={require('../../../assets/images/icon.png')}
-              style={{ width: 72, height: 72, borderRadius: 18 }}
-              resizeMode="cover"
+              source={require('@/assets/images/nsa-logo.png')}
+              style={{ width: 76, height: 76, borderRadius: 18 }}
+              resizeMode="contain"
             />
           </View>
 
           <Text style={fontStyles.heroTitle} className="text-[24px] text-[#1F2937] tracking-tight">
-            Skating Academy
+            National Skating Academy
           </Text>
           <Text style={fontStyles.heroSubtitle} className="text-[13px] text-[#6B7280] mt-1 text-center">
             Next-Gen Sports Management Suite

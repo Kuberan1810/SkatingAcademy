@@ -8,7 +8,7 @@ export interface CreateBatchRequest {
   start_time: string;
   end_time: string;
   monthly_fee: number;
-  yearly_fee: number;
+  yearly_fee?: number;
 }
 
 export interface Batch {
@@ -22,7 +22,7 @@ export interface Batch {
   start_time: string;
   end_time: string;
   monthly_fee: number;
-  yearly_fee: number;
+  yearly_fee?: number;
   is_active?: boolean;
   students_count?: number;
   created_at?: string;

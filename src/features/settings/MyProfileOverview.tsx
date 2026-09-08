@@ -191,7 +191,7 @@ export default function MyProfileOverview() {
 
           {/* Name & Role */}
           <Text style={fontStyles.profileName} className="text-[22px] text-[#1F2937] tracking-tight text-center">
-            {user?.name || 'Academy Instructor'}
+            {user?.name || ''}
           </Text>
 
           <Text style={fontStyles.profileEmail} className="text-[13px] text-[#6B7280] mt-0.5 text-center">

@@ -131,7 +131,6 @@ export default function CompletedClassOverview({
           startTime: '06:00 AM',
           endTime: '07:30 AM',
           monthlyFee: '₹1,250',
-          yearlyFee: '₹1,250',
         }}
         onBackPress={() => setIsEditBatchVisible(false)}
         onSubmit={(data) => {

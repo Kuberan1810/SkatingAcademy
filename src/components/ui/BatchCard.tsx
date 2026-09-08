@@ -6,7 +6,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { Calendar, CalendarRemove, Clock, Profile2User } from 'iconsax-react-native';
+import { Calendar, Clock, Profile2User } from 'iconsax-react-native';
 import styles, { COLORS } from '@/styles/styles';
 import { EllipsisVertical } from 'lucide-react-native';
 import PrimaryBtn from '@/components/ui/PrimaryBtn';
@@ -137,18 +137,11 @@ function BatchCard({
                 </Text>
               </View>
             </View>
-          ) : isNoClass ? (
-            <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FFF1F2] border border-[#FECDD3] gap-2.5 self-start">
-              <CalendarRemove size={18} color="#E11D48" variant="Linear" />
-              <Text className="text-[15px] font-urbanist-medium text-[#E11D48] tracking-tight">
-                No Class · {date}
-              </Text>
-            </View>
           ) : (
             <View className="flex-row items-center p-2.5 rounded-[12px] bg-[#FAFAFA] border border-primary-border gap-2.5 self-start">
               <Calendar size={18} color={COLORS.secondary} variant="Linear" />
               <Text className="text-[15px] font-urbanist-medium text-secondary tracking-tight">
-                {date}
+                {isNoClass ? `No Class · ${date}` : date}
               </Text>
             </View>
           )}

@@ -444,10 +444,6 @@ export default function CreateBatchScreen({
         setApiError('Please enter a monthly fee');
         return;
       }
-      if (!formData.yearlyFee.trim()) {
-        setApiError('Please enter a yearly fee');
-        return;
-      }
 
       const rawDays = formData.trainingDays
         .split(',')
@@ -466,7 +462,7 @@ export default function CreateBatchScreen({
         start_time: formatTimeTo24Hour(formData.startTime),
         end_time: formatTimeTo24Hour(formData.endTime),
         monthly_fee: parseNumericFee(formData.monthlyFee),
-        yearly_fee: parseNumericFee(formData.yearlyFee),
+        yearly_fee: formData.yearlyFee ? parseNumericFee(formData.yearlyFee) : undefined,
       };
 
       if (mode === 'edit') {

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getToken, clearAuthSession, triggerAuthExpired } from '@/store/auth-store';
 
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'https://skatingacademybackend.onrender.com';
+  process.env.EXPO_PUBLIC_API_URL || 'https://skatingacademybackend-9rfm.onrender.com';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

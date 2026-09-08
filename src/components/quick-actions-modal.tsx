@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { Layer, UserAdd, ImportSquare } from 'iconsax-react-native';
 import { ChevronRight, X } from 'lucide-react-native';
 import BulkImportModal from '@/features/creation/studentCreation/components/BulkImportModal';
@@ -170,10 +171,10 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
         animationType="none"
         onRequestClose={onClose}
       >
-        <View style={styles.overlayWrapper}>
-          <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
+        <View style={modalStyles.overlayWrapper}>
+          <Animated.View style={[modalStyles.backdrop, { opacity: fadeAnim }]}>
             <TouchableOpacity
-              style={styles.backdropTouch}
+              style={modalStyles.backdropTouch}
               activeOpacity={1}
               onPress={onClose}
             />
@@ -182,31 +183,53 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
           <Animated.View
             {...panResponder.panHandlers}
             style={[
-              styles.modalContainer,
+              modalStyles.modalContainer,
               { transform: [{ translateY: slideAnim }] },
             ]}
           >
-            <View style={styles.dragArea}>
-              <View style={styles.dragHandle} />
+            <View style={modalStyles.dragArea}>
+              <View style={modalStyles.dragHandle} />
             </View>
 
-            <View style={styles.header}>
+            <View style={modalStyles.header}>
               <View>
-                <Text style={styles.title}>Quick Actions</Text>
-                <Text style={styles.subtitle}>What would you like to create?</Text>
+                <Text
+                  style={modalStyles.title}
+                  className="text-[22px] font-urbanist-bold text-primary mb-1"
+                >
+                  Quick Actions
+                </Text>
+                <Text
+                  style={modalStyles.subtitle}
+                  className="text-[14px] font-urbanist-medium text-secondary"
+                >
+                  What would you like to create?
+                </Text>
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch (e) { }
+                  onClose();
+                }}
+                style={modalStyles.closeBtn}
+                activeOpacity={0.7}
+              >
                 <X size={18} color="#6B7280" strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.listContainer}>
+            <View style={modalStyles.listContainer}>
               {ACTION_ITEMS.map((item) => (
                 <TouchableOpacity
                   key={item.id}
-                  style={styles.actionItem}
+                  style={modalStyles.actionItem}
                   activeOpacity={0.7}
                   onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch (e) { }
                     onClose();
                     if (item.id === 'create_batch') {
                       router.push('/(tabs)/batches/add' as any);
@@ -217,14 +240,24 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
                     }
                   }}
                 >
-                  <View style={[styles.iconContainer, { backgroundColor: item.bgColor }]}>
+                  <View style={[modalStyles.iconContainer, { backgroundColor: item.bgColor }]}>
                     <item.icon size={22} color={item.color} variant="Linear" />
                   </View>
-                  <View style={styles.textContainer}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    <Text style={styles.itemDescription}>{item.description}</Text>
+                  <View style={modalStyles.textContainer}>
+                    <Text
+                      style={modalStyles.itemTitle}
+                      className="text-[15px] font-urbanist-semibold text-[#18181B] mb-0.5"
+                    >
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={modalStyles.itemDescription}
+                      className="text-[13px] font-urbanist-medium text-[#8E8E93]"
+                    >
+                      {item.description}
+                    </Text>
                   </View>
-                  <ChevronRight size={16} color="#D1D5DB" strokeWidth={2} />
+                  <ChevronRight size={18} color="#9CA3AF" strokeWidth={2} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -244,7 +277,7 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
                 pathname: '/(tabs)/batches/StudentListScreen',
                 params: { id: batchId, title: batchName, from: 'students' },
               } as any);
-            } catch (e) {}
+            } catch (e) { }
           }
         }}
       />
@@ -252,15 +285,15 @@ export default function QuickActionsModal({ visible, onClose }: QuickActionsModa
   );
 }
 
-const styles = StyleSheet.create({
+const modalStyles = StyleSheet.create({
   overlayWrapper: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFill as any,
     zIndex: 99999,
     elevation: 99999,
     justifyContent: 'flex-end',
   },
   backdrop: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFill as any,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   backdropTouch: {
@@ -287,12 +320,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
     backgroundColor: 'transparent',
   },
   dragHandle: {
-    width: 48,
-    height: 5,
+    width: 44,
+    height: 4.5,
     borderRadius: 3,
     backgroundColor: '#E5E7EB',
   },
@@ -300,18 +333,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
+    fontFamily: 'Urbanist_700Bold',
+    fontSize: 22,
+    color: '#333333',
   },
   subtitle: {
-    fontSize: 15,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: 'Urbanist_500Medium',
+    fontSize: 14,
+    color: '#626262',
   },
   closeBtn: {
     padding: 8,
@@ -324,17 +356,17 @@ const styles = StyleSheet.create({
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FDFDFD',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#F2EEF4',
   },
   iconContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -344,15 +376,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   itemTitle: {
+    fontFamily: 'Urbanist_600SemiBold',
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 2,
-    letterSpacing: -0.2,
+    color: '#18181B',
   },
   itemDescription: {
-    fontSize: 12.5,
-    color: '#9CA3AF',
-    letterSpacing: -0.1,
+    fontFamily: 'Urbanist_500Medium',
+    fontSize: 13,
+    color: '#8E8E93',
   },
 });
